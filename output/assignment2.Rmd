@@ -1,10 +1,12 @@
 ---
-title: "assignment2"
+title: "The Effect of Lobbying in Chicago"
 author: "Claire Herdeman"
 date: "1/23/2019"
 output: 
   html_document:
     code_folding: hide
+fig_width: 6 
+fig_height: 4 
 ---
 
 ```{r setup, include=FALSE}
@@ -17,6 +19,7 @@ library(here)
 library(readxl)
 library(zoo)
 library(ggrepel)
+library(forecast)
 ```
 
 ```{r functions, include=FALSE}
@@ -255,6 +258,8 @@ combinations %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
 council <- read_excel(here("data", "aldermen.xlsx"))
 ```
 
+# Private Industries Use Lobbyists to Influence Government
+
 ```{r graph1, warning=FALSE, error=FALSE}
 # Top 25 flag
 top_20 <- compensation %>%
@@ -289,14 +294,14 @@ compensation %>%
   
 ```
 
-```{r graph2, warning=FALSE, error=FALSE}
+```{r graph2, fig.height = 5, fig.width = 7, warning=FALSE, error=FALSE}
 compensation %>% 
   filter(TOP20 == 'Yes') %>% 
   group_by(CLIENT_NAME, CLIENT_INDUSTRY) %>%
   summarise(sum=sum(COMPENSATION_AMOUNT), n = n()) %>%
   mutate(sum = sum/1000000,
          INDUSTRY = if_else(CLIENT_INDUSTRY %in% c('HOSPITALITY / RESTAURANT', 'PUBLIC UTILITIES', 
-                                                   'RETAIL', 'EDUCATION', 'RACING & WAGERING'), 
+                                                   'RETAIL', 'EDUCATION', 'RACING & WAGERING', 'TRANSPORTATION'), 
                             'OTHER INDUSTRY', CLIENT_INDUSTRY),
          NICK_NAME = if_else(str_detect(CLIENT_NAME, 'CVS'), 'CVS',
                       if_else(str_detect(CLIENT_NAME, 'CITI'), 'CITI',
@@ -318,7 +323,7 @@ compensation %>%
          subtitle="Number and Size of Compensation Payments to Lobbyists by Top 20 Clients, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
          x = "Number of Compensation Payments",
-         y = "Total Compensation(in Millions)") +
+         y = "Total Compensation (in Millions)") +
     theme(plot.caption = element_text(hjust = 0),
           legend.position="bottom",
           legend.text=element_text(size=6),
@@ -326,23 +331,45 @@ compensation %>%
 
 ```
 
+```{r}
+compensation %>% 
+  filter(TOP20 == 'Yes') %>%
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>% 
+  mutate(sum = sum/1000000) %>%
+  ggplot(aes(reorder(LOBBYIST_NAME, sum), sum)) +
+  geom_point(stat = 'identity', size = 6) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  #arrange(desc(sum))
+
+paid_by_top20 <- compensation %>% 
+  filter(TOP20 == 'Yes') %>% group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>% filter(sum >= 1000000) #arrange(desc(sum))
+```
+
+# Lobbying Activity
+
 ```{r graph3, warning=FALSE, error=FALSE}
 # Summarise data into necessary format
 act_summ <- activity %>% 
+  mutate(#year = format(PERIOD_START, '%Y'),
+         PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
   group_by(PERIOD_START, ACTION) %>%
   summarise(n = n()) 
 
-diff <- data_frame(PERIOD_START = (act_summ %>% filter(ACTION == 'ADMINISTRATIVE'))$PERIOD_START, 
-                   n = (act_summ %>% filter(ACTION == 'ADMINISTRATIVE'))$n - 
-                     (act_summ %>% filter(ACTION == 'LEGISLATIVE'))$n) %>%
-              mutate(PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'))
+#act_summ %>% group_by(year, ACTION) %>% summarise(avg = mean(n))
+
+#diff <- data_frame(PERIOD_START = (act_summ %>% filter(ACTION == 'ADMINISTRATIVE'))$PERIOD_START, 
+#                   n = (act_summ %>% filter(ACTION == 'ADMINISTRATIVE'))$n - 
+#                     (act_summ %>% filter(ACTION == 'LEGISLATIVE'))$n) #%>%
+#              #mutate(PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'))
                   
 
 # Plotting
 ggplot(NULL, aes(PERIOD_START, n)) +
   geom_line(data=act_summ, aes(group=ACTION, color=ACTION), size = 1) +
-  geom_point(data=diff, aes(fill="dark gray"), size=3, shape=20) +
-  scale_x_date(date_breaks='3 months') +
+  #geom_point(data=diff, aes(fill="dark gray"), size=3, shape=20) +
+  scale_x_yearqtr(limits = c('2012 Q1', '2018 Q4'), format = "%YQ%q", n = 28) +
   labs(title="Growth in administrative actions has outpaced others since 2016",
         subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
         caption="Source: City of Chicago Lobbyist Data, Activity",
@@ -357,16 +384,16 @@ ggplot(NULL, aes(PERIOD_START, n)) +
 
 ```
 
+# Direct Influence on City Council
 
-
-```{r councilmen, warning=FALSE, error=FALSE}
+```{r councilmen, fig.height = 8, fig.width = 6, warning=FALSE, error=FALSE}
 council_last <- str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+')))
-council_last
+#council_last
 f = ""
 for (last in council_last[40:52]) {
   f <- paste(f, paste('ALDERMAN = if_else(str_detect(RECIPIENT, \'',last,'\'), \'',last,'\', ALDERMAN)', sep=""), ',', sep = "")
   }
-f
+#f
 
 alderman_contributions <- contribution %>% 
   mutate(ALDERMAN = "") %>%
@@ -423,23 +450,39 @@ alderman_contributions <- contribution %>%
          ALDERMAN = if_else(str_detect(RECIPIENT, 'VILLEGAS'), 'VILLEGAS', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN)
          ) %>% 
-  filter(ALDERMAN != "")
-                       
-alderman_contributions
-alderman_contributions %>% 
+  filter(ALDERMAN != "" & ALDERMAN != "EMANUEL")
+  
+ald_totals <- alderman_contributions %>% 
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
   group_by(ALDERMAN) %>% 
   summarise(sum = sum(AMOUNT), n = n()) %>%
-  arrange(desc(sum)) %>%
+  arrange(desc(sum))
+                     
+alderman_contributions %>% 
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
+  left_join(ald_totals, by = 'ALDERMAN') %>% #glimpse()
   ggplot() +
-  geom_col(aes(ALDERMAN, sum, fill=sum)) + coord_flip()
+  geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT, fill = -sum), alpha = 0.8) + 
+  coord_flip() +
+  scale_fill_gradient(high = 'white', low = '#5900b3') +
+  annotate("text", x = 'REILLY', y = 1600, label = "$153k")
 
+ald_totals
+```
+
+```{r lobbypay, fig.height = 6, fig.width = 6}
+alderman_contributions %>% 
+  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME, TRUE, FALSE))%>%
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
+  left_join(ald_totals, by = 'ALDERMAN') %>%
+  group_by(ALDERMAN, LOBBYIST_NAME) %>% 
+  summarise(sum = sum(AMOUNT), n = n()) %>%
+  arrange(desc(sum)) %>% 
+  ggplot() +
+  geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = sum)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 ```{r}
-alderman_contributions %>% filter(str_detect(RECIPIENT, "O'CONNOR")) %>% group_by(LOBBYIST_NAME) %>% summarise(n = n()) %>% arrange(desc(n))
-```
-
-```{r}
-compensation %>% filter(str_detect(LOBBYIST_NAME, 'GATTUSO')) %>% group_by(CLIENT_NAME) %>% summarise(sum = sum(COMPENSATION_AMOUNT)) %>% arrange(desc(sum))
+#compensation %>% filter(str_detect(LOBBYIST_NAME, 'GATTUSO')) %>% group_by(CLIENT_NAME) %>% summarise(sum = sum(COMPENSATION_AMOUNT)) %>% arrange(desc(sum))
 ```
