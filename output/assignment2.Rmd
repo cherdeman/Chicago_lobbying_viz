@@ -17,16 +17,14 @@ library(here)
 library(readxl)
 library(zoo)
 library(ggrepel)
-library(forecast)
 library(wesanderson)
 library(RColorBrewer)
 source("utils.R")
 source("load.R")
+# [Include additional information here about what it is and who does it]
 ```
 
 # Background
-
-[Include additional information here about what it is and who does it]
 
 The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities (meetings with government departments or officials) conducted on behalf of clients. 
 
@@ -52,6 +50,7 @@ activity %>%
   ggplot(aes(year, n)) +
     geom_line(aes(group=ACTION, color=ACTION), size = 1) +
     scale_color_manual(values = c("#3B9AB2", "#EBCC2A", "#F21A00")) +
+    scale_y_continuous(label=comma) +
     labs(title="Growth in administrative actions has outpaced others since 2016",
         subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
         caption="Source: City of Chicago Lobbyist Data, Activity",
@@ -64,9 +63,9 @@ activity %>%
         legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'))
 ```
 
-Lobbying is a commonplace activity at all levels of government. In Chicago, lobbying "Actions" are divided into three categories: Administrative, Legislative, and Both. Administrative actions are meant to spur administrative action, including meetings regarding contract implementation, marketing services to City agencies, or submitting information regarding redevelopment plans. Legislative actions are intended to encourage support or opposition for specific ordinances or bills before the City legislature. The "Both" category includes some combination of the two. [Something about the increase in administrative actions]
+Lobbying is a commonplace activity at all levels of government. In Chicago, lobbying "Actions" are divided into three categories: Administrative, Legislative, and Both. Administrative actions are meant to spur administrative action, including meetings regarding contract implementation, marketing services to City agencies, or submitting information regarding redevelopment plans. Legislative actions are intended to encourage support or opposition for specific ordinances or bills before the City legislature. The "Both" category includes some combination of the two. There is a notable increase in the number of Administrative actions beginning in 2016 and continuing to the present. this trend warrants further exploration.
 
-# Private Industries Use Lobbyists to Influence Government
+# Private Industry Uses Lobbyists to Influence Government
 
 ```{r graph1, warning=FALSE, error=FALSE}
 # Top 25 flag
@@ -115,7 +114,7 @@ c + geom_point(data = compensation %>%
 
 ```
 
-Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. Further, only 20 clients routinely constitute about 25% of that total. There is clear seasonality the total payment amounts; total payements in the first quarter are the highest, then trend down over the course of the year. This may reflect the trends in legistlative activity.
+Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. Further, 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
 
 ```{r graph2, fig.height = 6, fig.width = 7, warning=FALSE, error=FALSE}
 # Map actual name to target name
@@ -193,13 +192,9 @@ compensation %>%
           legend.position = c(0.15, 0.75),
           legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
     guides(color=guide_legend(title="Paid Over $1M")) 
-
-paid_by_top20 <- compensation %>% 
-  filter(TOP20 == 'Yes') %>% group_by(LOBBYIST_NAME) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT), n = n())
 ```
 
-Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 9 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employees of the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each.
+Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 9 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each.
 
 # Direct Influence on City Council
 
@@ -274,7 +269,8 @@ alderman_contributions <- contribution %>%
          ALDERMAN = if_else(str_detect(RECIPIENT, 'TUNNEY'), 'TUNNEY', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'VALENCIA'), 'VALENCIA', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'VILLEGAS'), 'VILLEGAS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN)
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'ZALEWSKI'), 'ZALEWSKI', ALDERMAN)
          ) %>% 
   filter(ALDERMAN != "" & ALDERMAN != "EMANUEL")
   
@@ -287,23 +283,26 @@ ald_totals <- alderman_contributions %>%
 alderman_contributions %>% 
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
   left_join(ald_totals, by = 'ALDERMAN') %>% #glimpse()
+  #mutate(ALDERMAN = tools::toTitleCase(tolower(ALDERMAN))) %>% glimpse()
   ggplot() +
   geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
   coord_flip() +
-  annotate("text", x = 49.7, y = 1600, label = "Total", size = 3) +
+  annotate("text", x = 50.7, y = 1600, label = "Total", size = 3) +
   annotate("text", x = 'REILLY', y = 1600, label = "$153k", size = 3) +
   annotate("text", x = 'JOE MOORE', y = 1600, label = "$43k", size = 3) +
   annotate("text", x = 'TUNNEY', y = 1600, label = "$28k", size = 3) +
   annotate("text", x = 'FOULKES', y = 1600, label = "$8k", size = 3) +
   annotate("text", x = 'TABARES', y = 1600, label = "$0k", size = 3) +
-  annotate("rect", xmin = 'JOE MOORE', xmax = 50, ymin = 0, ymax = 1550, fill = '#7294D4', alpha = .2) +
+  annotate("text", x = 'TABARES', y = 600, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 2) +
+  annotate("text", x = 'ZALEWSKI', y = 700, label = "Resigned from 23rd Ward\n on May 31, 2018", size = 2) +
+  annotate("rect", xmin = 'JOE MOORE', xmax = 51, ymin = 0, ymax = 1550, fill = '#7294D4', alpha = .2) +
   annotate("rect", xmin = 'TUNNEY', xmax = 'JOE MOORE', ymin = 0, ymax = 1550, fill = '#D8A499', alpha = .2) +
   annotate("rect", xmin = 'FOULKES', xmax = 'TUNNEY', ymin = 0, ymax = 1550, fill = '#C6CDF7', alpha = .2) +
   annotate("rect", xmin = 0, xmax = 'FOULKES', ymin = 0, ymax = 1550, fill = '#E6A0C4', alpha = .2) +
   annotate("text", x = 'BURKE', y = 50, label = "Charged with attempted\n extortion on Jan 3, 2019", size = 2) +
   scale_y_continuous(label=dollar_format()) +
-  labs(title="Since the Most Recent Municipal Election in 2015,\n Lobbyists Have Contributed Significant Amounts to Aldermen",
-         subtitle="Distribution of Individual Lobbyist Contributions\n to Aldermen Ordered by Total, 2015 - 2018",
+  labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
+         subtitle="Distribution of Lobbyist Contributions to Aldermen Ordered by Total, 2015 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "Alderman",
          y = "Contribution Amount") +
@@ -311,7 +310,7 @@ alderman_contributions %>%
   theme(plot.caption = element_text(hjust = 0))
 ```
 
-Virtually all 
+Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015,  received over \$150k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the second highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
 
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
@@ -319,22 +318,30 @@ Virtually all
 # Bin lobbyists by location? octant of community areas
 # sankey diagram
 
+paid_by_top20 <- compensation %>% 
+  filter(TOP20 == 'Yes') %>% 
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
+  filter(sum >= 1000000)
+
 alderman_contributions %>% 
   mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME, TRUE, FALSE))%>%
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
   left_join(ald_totals, by = 'ALDERMAN') %>%
   group_by(ALDERMAN, LOBBYIST_NAME) %>% 
   summarise(sum = sum(AMOUNT), n = n()) %>%
-  #arrange(desc(sum)) %>% 
   ggplot() +
-    geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = -sum)) +
-    labs(title="Title Here",
-         subtitle="Total Contributions by Top Paid Lobbyists",
+    geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = sum)) +
+    scale_fill_gradient(low = "#79d279", high = "#061306", label=dollar_format()) +
+    labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
+         subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "Lobbyist",
-         y = "Alderman") +
+         y = "Alderman (ordered by total contributions from included lobbyists)") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
-          plot.caption = element_text(hjust = 0),)
+          plot.caption = element_text(hjust = 0)) +
+  guides(fill=guide_legend(title="Total Payments")) 
 ```
 
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). According to the available data, he donated $16,500 to City Clerk Anna Valencia in 2017 and 2018. If accurate, this would represent a violation of the campaign contribution limits set by the Chicago Governmental Ethics Ordinance.
