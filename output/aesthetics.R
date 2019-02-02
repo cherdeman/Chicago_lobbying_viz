@@ -17,17 +17,19 @@ dark_colors = c(
   'red' = "#CB2314", 
   'blue' = "#046C9A", 
   'purple' = "#273046",
-  'green' = "#354823",
+  'green' = "#2F401F", # old green #354823
   'gray' = "#595959"
 )
+
+
 
 light_colors = c(
   'orange' = "#F2AD00", 
   'red' = "#F4948b",
   'blue' = "#5BBCD6",
   'purple' = "#576B9C",
-  'green' = "#658A43",
-  'gray' = "A6A6A6"
+  'green' = "#6EB643", # #658A43",
+  'gray' = "#A6A6A6"
 )
 
 dark_cols <- function(...) {

@@ -24,23 +24,13 @@ library(zoo)
 library(ggrepel)
 library(wesanderson)
 library(RColorBrewer)
+library(extrafont)
 source("utils.R")
 source("load.R")
+source("aesthetics.R")
 # [Include additional information here about what it is and who does it]
 ```
 
-```{r theme}
-library(extrafont)
-theme_claire <- theme_minimal() + 
-                  theme(text = element_text(family = "RobotoCondensed-Regular"),
-                        plot.title = element_text(family = "Roboto-Regular", size = 16),
-                        plot.subtitle = element_text(family = "RobotoCondensed-Italic", size = 12),
-                        plot.caption = element_text(hjust = 1, size = 8),
-                        panel.grid.minor = element_blank(),
-                        panel.grid.major.x = element_blank(),
-                        legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')
-                        )
-```
 # Background
 
 The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities (meetings with government departments or officials) conducted on behalf of clients. 
@@ -66,14 +56,15 @@ activity %>%
   summarise(n = n()) %>%
   ggplot(aes(year, n)) +
     geom_line(aes(group=ACTION, color=ACTION), size = 1) +
-    scale_color_manual(values = c("#3B9AB2", "#EBCC2A", "#F21A00")) +
+    scale_color_manual(values = as.vector(dark_colors[c('blue', 'yellow', 'red')])) +
     scale_y_continuous(label=comma) +
     labs(title="Growth in administrative actions has outpaced others since 2016",
         subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
         caption="Source: City of Chicago Lobbyist Data, Activity",
         x = "Years",
         y = "Number of Lobbying Actions") +
-    theme_claire + theme(legend.position = c(0.15, 0.8))
+    theme_claire + 
+        theme(legend.position = c(0.15, 0.8))
 ```
 
 Lobbying is a commonplace activity at all levels of government. In Chicago, lobbying "Actions" are divided into three categories: Administrative, Legislative, and Both. Administrative actions are meant to spur administrative action, including meetings regarding contract implementation, marketing services to City agencies, or submitting information regarding redevelopment plans. Legislative actions are intended to encourage support or opposition for specific ordinances or bills before the City legislature. The "Both" category includes some combination of the two. There is a notable increase in the number of Administrative actions beginning in 2016 and continuing to the present. this trend warrants further exploration.
@@ -101,25 +92,23 @@ c <- compensation %>%
     geom_col(aes(fill=factor(TOP20, levels=c("No","Yes")))) + 
     scale_y_continuous(label=dollar_format()) +
     scale_x_yearqtr(limits = c('2012 Q1', '2018 Q4'), format = "%YQ%q", n = 28) +
-    scale_fill_manual(values=c("#9999ff", "#0000ff")) + 
+    scale_fill_manual(values=c(as.vector(light_colors['blue']), as.vector(dark_colors['blue']))) + 
     labs(title="The Top 20 Clients Pay ~25% of Lobbyist Compensation",
          subtitle="Total Quarterly Lobbyist Compensation, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
          x = "Time",
          y = "Total Lobbyist Compensation (in Millions)") +
-  theme_minimal() +
+  theme_claire +
   theme(axis.text.x = element_text(angle = 90, hjust = 1), 
-        plot.caption = element_text(hjust = 0),
         legend.box = 'horizontal',
-        legend.position = c(0.46, 0.85),
-        legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+        legend.position = c(0.46, 0.85)) +
   guides(fill=guide_legend(title="Top 20")) 
 
 c + geom_point(data = compensation %>% 
   mutate(PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
   #filter(PERIOD_START < as.Date('2018-07-01')) %>%
   group_by(PERIOD_START) %>%
-  summarise(pct_25 = sum(COMPENSATION_AMOUNT) * .25/1000000, n = n()), aes(PERIOD_START, pct_25, color = '#ff0000')) +
+  summarise(pct_25 = sum(COMPENSATION_AMOUNT) * .25/1000000, n = n()), aes(PERIOD_START, pct_25, color = dark_colors['red'])) +
   scale_color_identity(name = "25% Mark", 
                       labels = c(""), 
                       guide = "legend")
@@ -157,25 +146,23 @@ t <-compensation %>%
   summarise(sum=sum(COMPENSATION_AMOUNT), n = n()) %>%
   mutate(sum = sum/1000000) %>%
   ggplot() +
-    geom_point(aes(n, sum), color = '#595959', size = 2, alpha = 0.4) +
+    geom_point(aes(n, sum), color = light_colors["gray"], size = 2, alpha = 0.4) +
     annotate("text", x = 300, y = .7, label = "99% of cleints paid under\n $2.0M to lobbyists\n in the time period", size = 3)
 
 t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7) +
     geom_text_repel(data = top, aes(n, sum, label = NICK_NAME), check_overlap = TRUE, size = 3, hjust = 0, nudge_x = 0.1) + 
     scale_y_continuous(label=dollar_format()) +
-    scale_color_manual(values = brewer.pal(n=6, name="Dark2")) +
+    scale_color_manual(values = as.vector(dark_colors[1:6])) +
     xlim(0, 650) +
     labs(title="Tech Companies, Healthcare Providers, and Industry Associations\n are Among the Highest Paying Clients",
          subtitle="Compensation Payments to Lobbyists, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
          x = "Number of Payments",
          y = "Total Compensation (in Millions)") +
-    theme_minimal() +
-    theme(plot.caption = element_text(hjust = 0),
-          legend.text=element_text(size=6),
+    theme_claire +
+    theme(legend.text=element_text(size=6),
           legend.title=element_text(size=8),
-          legend.position = c(0.8, 0.2),
-          legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+          legend.position = c(0.8, 0.2)) +
   guides(color=guide_legend(title="Industry of Top 20"))
 
 #activity %>% filter(str_detect(CLIENT_NAME, 'ACADEMY FOR URBAN'))
@@ -188,22 +175,20 @@ In contrast to the vast majority of clients, the top 20 clients in terms of comp
 compensation %>% 
   filter(TOP20 == 'Yes') %>%
   group_by(LOBBYIST_NAME) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT), log_sum = log(sum(COMPENSATION_AMOUNT)), n = n()) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), log_sum = log10(sum(COMPENSATION_AMOUNT)), n = n()) %>% 
   mutate(sum = sum/1000000,
          cat = if_else(sum < 1, 'No', 'Yes')) %>%
   ggplot(aes(reorder(tools::toTitleCase(tolower(LOBBYIST_NAME)), log_sum), log_sum)) +
     geom_point(aes(color = cat), stat = 'identity', size = 3) +
-    scale_color_manual(values = wes_palette(n=2, name="Moonrise2")) +
-    labs(title="The Top 20 Clients Paid 63 Lobbyists Over the Time Period;\n 9 Earned Over $1M Each",
+    scale_color_manual(values = as.vector(dark_colors[c("gray", "orange")])) +
+    labs(title="The Top 20 Clients Paid 63 Lobbyists Over the Time Period;\n 8 Earned Over $1M Each",
          subtitle="Log of Total Compensation to Lobbyists by Top 20 Clients, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
          x = "Lobbyist",
          y = "Log Scale of Total Compensation") +
-    theme_minimal() +
+    theme_claire +
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
-          plot.caption = element_text(hjust = 0),
-          legend.position = c(0.15, 0.75),
-          legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+          legend.position = c(0.15, 0.75)) +
     guides(color=guide_legend(title="Paid Over $1M")) 
 ```
 
@@ -292,6 +277,20 @@ ald_totals <- alderman_contributions %>%
   group_by(ALDERMAN) %>% 
   summarise(sum = sum(AMOUNT), n = n()) %>%
   arrange(desc(sum))
+
+# Set names for annotations
+high_name <- 'BURKE'
+high_mid_name <- 'BEALE'
+mid_name <- 'CAPPLEMAN'
+low_mid_name <- 'SADLOWSKI'
+low_name <- 'TABARES'
+
+# Set amounts for annotations
+high_amt <- '$82k'
+high_mid_amt <- '$20k'
+mid_amt <- '$14k'
+low_mid_amt <- '$5k'
+low_amt <- '$0k'
                      
 alderman_contributions %>% 
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
@@ -301,26 +300,25 @@ alderman_contributions %>%
   geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
   coord_flip() +
   annotate("text", x = 50.7, y = 1600, label = "Total", size = 3) +
-  annotate("text", x = 'REILLY', y = 1600, label = "$153k", size = 3) +
-  annotate("text", x = 'JOE MOORE', y = 1600, label = "$43k", size = 3) +
-  annotate("text", x = 'TUNNEY', y = 1600, label = "$28k", size = 3) +
-  annotate("text", x = 'FOULKES', y = 1600, label = "$8k", size = 3) +
-  annotate("text", x = 'TABARES', y = 1600, label = "$0k", size = 3) +
+  annotate("text", x = high_name, y = 1600, label = high_amt, size = 3) +
+  annotate("text", x = high_mid_name, y = 1600, label = high_mid_amt, size = 3) +
+  annotate("text", x = mid_name, y = 1600, label = mid_amt, size = 3) +
+  annotate("text", x = low_mid_name, y = 1600, label = low_mid_amt, size = 3) +
+  annotate("text", x = low_name, y = 1600, label = low_amt, size = 3) +
   annotate("text", x = 'TABARES', y = 600, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 2) +
   annotate("text", x = 'ZALEWSKI', y = 700, label = "Resigned from 23rd Ward\n on May 31, 2018", size = 2) +
-  annotate("rect", xmin = 'JOE MOORE', xmax = 51, ymin = 0, ymax = 1550, fill = '#7294D4', alpha = .2) +
-  annotate("rect", xmin = 'TUNNEY', xmax = 'JOE MOORE', ymin = 0, ymax = 1550, fill = '#D8A499', alpha = .2) +
-  annotate("rect", xmin = 'FOULKES', xmax = 'TUNNEY', ymin = 0, ymax = 1550, fill = '#C6CDF7', alpha = .2) +
-  annotate("rect", xmin = 0, xmax = 'FOULKES', ymin = 0, ymax = 1550, fill = '#E6A0C4', alpha = .2) +
-  annotate("text", x = 'BURKE', y = 50, label = "Charged with attempted\n extortion on Jan 3, 2019", size = 2) +
+  annotate("rect", xmin = high_mid_name, xmax = 51, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
+  annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["blue"], alpha = .2) +
+  annotate("rect", xmin = low_mid_name, xmax = mid_name, ymin = 0, ymax = 1550, fill = light_colors["purple"], alpha = .2) +
+  annotate("rect", xmin = 0, xmax = low_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
+  annotate("text", x = 50.5, y = 200, label = "Charged with attempted extortion on Jan 3, 2019", size = 2, fontface = 2) +
   scale_y_continuous(label=dollar_format()) +
   labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
          subtitle="Distribution of Lobbyist Contributions to Aldermen Ordered by Total, 2015 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "Alderman",
          y = "Contribution Amount") +
-  theme_minimal() +
-  theme(plot.caption = element_text(hjust = 0))
+  theme_claire
 ```
 
 Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015,  received over \$150k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the second highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
@@ -345,16 +343,20 @@ alderman_contributions %>%
   summarise(sum = sum(AMOUNT), n = n()) %>%
   ggplot() +
     geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = sum)) +
-    scale_fill_gradient(low = "#79d279", high = "#061306", label=dollar_format()) +
+    scale_fill_gradient(low = light_colors['green'], high = dark_colors['green'], label=dollar_format()) +
     labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
          subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "Lobbyist",
          y = "Alderman (ordered by total contributions from included lobbyists)") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1),
-          plot.caption = element_text(hjust = 0)) +
+    theme_claire +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   guides(fill=guide_legend(title="Total Payments")) 
 ```
 
-The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). According to the available data, he donated $16,500 to City Clerk Anna Valencia in 2017 and 2018. If accurate, this would represent a violation of the campaign contribution limits set by the Chicago Governmental Ethics Ordinance.
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). TODO ADD ADDITIONAL COMMENTARY
+
+```{r}
+lobbyists %>% 
+   filter(LOBBYIST_NAME == 'JOHN KELLY')
+```

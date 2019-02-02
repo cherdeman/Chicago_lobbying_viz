@@ -80,6 +80,7 @@ compensation %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
          LOBBYIST_MIDDLE_INITIAL = toupper(LOBBYIST_MIDDLE_INITIAL),
          LOBBYIST_LAST_NAME = toupper(LOBBYIST_LAST_NAME),
          LOBBYIST_NAME = stringr::str_c(LOBBYIST_FIRST_NAME, LOBBYIST_LAST_NAME, sep=" "),
+         LOBBYIST_NAME = if_else(str_detect(LOBBYIST_NAME, 'JOHN KELLY'), 'JOHN KELLY, JR.', LOBBYIST_NAME),
          PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'),
          PERIOD_END = as.Date(PERIOD_END, '%m/%d/%Y'),
          CREATED_DATE = as.Date(CREATED_DATE, '%m/%d/%Y')
@@ -91,9 +92,11 @@ contribution <- read_csv(here("data", "Contributions.csv")) %>%
          LOBBYIST_FIRST_NAME = toupper(LOBBYIST_FIRST_NAME),
          LOBBYIST_LAST_NAME = toupper(LOBBYIST_LAST_NAME),
          LOBBYIST_NAME = stringr::str_c(LOBBYIST_FIRST_NAME, LOBBYIST_LAST_NAME, sep=" "),
+         LOBBYIST_NAME = if_else(str_detect(LOBBYIST_NAME, 'JOHN KELLY'), 'JOHN KELLY, JR.', LOBBYIST_NAME),
          PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'),
          PERIOD_END = as.Date(PERIOD_END, '%m/%d/%Y'),
-         CONTRIBUTION_DATE = as.Date(CONTRIBUTION_DATE, '%m/%d/%Y'))
+         CONTRIBUTION_DATE = as.Date(CONTRIBUTION_DATE, '%m/%d/%Y')) %>%
+  distinct(CONTRIBUTION_DATE, RECIPIENT, AMOUNT, LOBBYIST_NAME,.keep_all = TRUE)
 
 # Lobbying activity
 activity <- read_csv(here("data", "Lobbying_Activity.csv")) 
@@ -107,6 +110,7 @@ activity %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
          LOBBYIST_MIDDLE_INITIAL = toupper(LOBBYIST_MIDDLE_INITIAL),
          LOBBYIST_LAST_NAME = toupper(LOBBYIST_LAST_NAME),
          LOBBYIST_NAME = stringr::str_c(LOBBYIST_FIRST_NAME, LOBBYIST_LAST_NAME, sep=" "),
+         LOBBYIST_NAME = if_else(str_detect(LOBBYIST_NAME, 'JOHN KELLY'), 'JOHN KELLY, JR.', LOBBYIST_NAME),
          PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'),
          PERIOD_END = as.Date(PERIOD_END, '%m/%d/%Y')
   )
@@ -119,7 +123,8 @@ lobbyists <- read_csv(here("data", "Lobbyists.csv")) %>%
          LAST_NAME = toupper(LAST_NAME),
          SUFFIX = toupper(SUFFIX),
          EMPLOYER_NAME = toupper(EMPLOYER_NAME),
-         LOBBYIST_NAME = stringr::str_c(FIRST_NAME, LAST_NAME, sep=" ")
+         LOBBYIST_NAME = stringr::str_c(FIRST_NAME, LAST_NAME, sep=" "),
+         LOBBYIST_NAME = if_else(str_detect(LOBBYIST_NAME, 'JOHN KELLY'), 'JOHN KELLY, JR.', LOBBYIST_NAME)
   ) %>% 
   distinct()
 
@@ -133,7 +138,8 @@ combinations %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
          LOBBYIST_LAST_NAME = toupper(LOBBYIST_LAST_NAME),
          LOBBYIST_SUFFIX = toupper(LOBBYIST_SUFFIX),
          EMPLOYER_NAME = toupper(EMPLOYER_NAME),
-         LOBBYIST_NAME = stringr::str_c(LOBBYIST_FIRST_NAME, LOBBYIST_LAST_NAME, sep=" "))
+         LOBBYIST_NAME = stringr::str_c(LOBBYIST_FIRST_NAME, LOBBYIST_LAST_NAME, sep=" "),
+         LOBBYIST_NAME = if_else(str_detect(LOBBYIST_NAME, 'JOHN KELLY'), 'JOHN KELLY, JR.', LOBBYIST_NAME))
 
 # Councilmen
 council <- read_excel(here("data", "aldermen.xlsx"))
