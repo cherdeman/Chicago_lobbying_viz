@@ -87,6 +87,21 @@ compensation %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
   )
 
 # Political contributions
+
+# Kurson Reyes Contributions
+kurson_reyes <- read_csv(here("data", "kurson_reyes_receipts.csv")) %>%
+  select(committee_name, last_name, first_name, received_date, aggregate_amount) %>%
+  mutate(committee_name = str_to_upper(committee_name),
+         last_name = str_to_upper(last_name),
+         first_name = str_to_upper(first_name),
+         # Group Reyes Kurson and Amy Kurson in Lobbyist Name
+         LOBBYIST_NAME = 'REYES KURSON',
+         received_date = as.Date(received_date, '%Y-%m-%d')) %>%
+  filter(received_date > as.Date('2011-12-31'))
+colnames(kurson_reyes) <- c("RECIPIENT", "LOBBYIST_LAST_NAME", "LOBBYIST_FIRST_NAME", 
+                            "CONTRIBUTION_DATE", "AMOUNT", "LOBBYIST_NAME") 
+
+# All others
 contribution <- read_csv(here("data", "Contributions.csv")) %>%
   mutate(RECIPIENT = toupper(RECIPIENT),
          LOBBYIST_FIRST_NAME = toupper(LOBBYIST_FIRST_NAME),
@@ -96,7 +111,9 @@ contribution <- read_csv(here("data", "Contributions.csv")) %>%
          PERIOD_START = as.Date(PERIOD_START, '%m/%d/%Y'),
          PERIOD_END = as.Date(PERIOD_END, '%m/%d/%Y'),
          CONTRIBUTION_DATE = as.Date(CONTRIBUTION_DATE, '%m/%d/%Y')) %>%
-  distinct(CONTRIBUTION_DATE, RECIPIENT, AMOUNT, LOBBYIST_NAME,.keep_all = TRUE)
+  distinct(CONTRIBUTION_DATE, RECIPIENT, AMOUNT, LOBBYIST_NAME,.keep_all = TRUE) %>%
+  # Bind Kurson Reyes contributions
+  bind_rows(kurson_reyes)
 
 # Lobbying activity
 activity <- read_csv(here("data", "Lobbying_Activity.csv")) 
@@ -143,3 +160,5 @@ combinations %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
 
 # Councilmen
 council <- read_excel(here("data", "aldermen.xlsx"))
+
+

@@ -22,7 +22,7 @@ library(here)
 library(readxl)
 library(zoo)
 library(ggrepel)
-library(wesanderson)
+#library(wesanderson)
 library(RColorBrewer)
 library(extrafont)
 source("utils.R")
@@ -56,7 +56,7 @@ activity %>%
   summarise(n = n()) %>%
   ggplot(aes(year, n)) +
     geom_line(aes(group=ACTION, color=ACTION), size = 1) +
-    scale_color_manual(values = as.vector(dark_colors[c('blue', 'yellow', 'red')])) +
+    scale_color_manual(values = as.vector(dark_colors[c('blue', 'purple', 'red')])) +
     scale_y_continuous(label=comma) +
     labs(title="Growth in administrative actions has outpaced others since 2016",
         subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
@@ -68,6 +68,59 @@ activity %>%
 ```
 
 Lobbying is a commonplace activity at all levels of government. In Chicago, lobbying "Actions" are divided into three categories: Administrative, Legislative, and Both. Administrative actions are meant to spur administrative action, including meetings regarding contract implementation, marketing services to City agencies, or submitting information regarding redevelopment plans. Legislative actions are intended to encourage support or opposition for specific ordinances or bills before the City legislature. The "Both" category includes some combination of the two. There is a notable increase in the number of Administrative actions beginning in 2016 and continuing to the present. this trend warrants further exploration.
+
+```{r word_cloud, fig.height = 8, fig.width = 8}
+b <- activity %>%
+  filter(PERIOD_START > as.Date('2014-12-31')) %>%
+  mutate(ACTION_SOUGHT_WORDS = as.vector(str_split(ACTION_SOUGHT, pattern = c(" ", ", ")))) %>%
+  group_by(ACTION) %>%
+  summarise(WORDS = paste(ACTION_SOUGHT, collapse = ", ")) %>%
+  mutate(WORDS_SEP = as.vector(str_split(WORDS, pattern = "[^a-zA-Z0-9]? ")))
+
+common_words <- c("A", "AND", "AT", "OF", "IN", "THE", "BE", "TO", "THAT", "HAVE",  
+                  "IT", "/", "&", "FOR", "N", "E", "W", "S", "L")
+
+# Probably a better way to do this
+admin <- data.frame(table(b$WORDS_SEP[1])) %>%
+  mutate(ACTION = 'ADMINISTRATIVE') %>%
+  rename(WORD = Var1, COUNT = Freq) %>%
+  arrange(desc(COUNT)) %>%
+  slice(1:30)
+both <- data.frame(table(b$WORDS_SEP[2])) %>%
+  mutate(ACTION = 'BOTH') %>%
+  rename(WORD = Var1, COUNT = Freq) %>%
+  arrange(desc(COUNT)) %>%
+  slice(1:30)
+legis <- data.frame(table(b$WORDS_SEP[3])) %>%
+  mutate(ACTION = 'LEGISLATIVE') %>%
+  rename(WORD = Var1, COUNT = Freq) %>%
+  arrange(desc(COUNT)) %>%
+  slice(1:30)
+
+word_counts <- admin %>%
+  rbind(both) %>%
+  rbind(legis) %>% 
+  filter(!(WORD %in% common_words))
+
+word_counts %>% 
+ggplot +
+  aes(x = 1, y = 1, size = COUNT, label = WORD, color = ACTION) +
+  geom_text_repel(segment.size = 0, force = 150) +
+  scale_size(range = c(2, 8), guide = FALSE) +
+  scale_color_manual(values = as.vector(dark_colors[c('blue', 'purple', 'red')])) +
+  scale_y_continuous(breaks = NULL) +
+  scale_x_continuous(breaks = NULL) +
+  labs(x = '', y = '') +
+  facet_grid(rows = vars(ACTION), switch="both") +
+  labs(title="Real estate developments are the most frequently discussed items in lobbying meetings",
+         subtitle="Most Freqently Used Words in Activity Descriptions, 2015-2018",
+         caption="Source: City of Chicago Lobbyist Data, Activity") +
+  theme_claire +
+  theme(panel.background = element_blank(), 
+        panel.border = element_rect(color="black",size=1, fill=NA),
+        strip.background = element_rect(color="black",size=0.5),
+        legend.position = "none")
+```
 
 # Private Industry Uses Lobbyists to Influence Government
 
@@ -208,10 +261,10 @@ Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their i
 
 council_last <- str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+')))
 #council_last
-f = ""
-for (last in council_last[40:52]) {
-  f <- paste(f, paste('ALDERMAN = if_else(str_detect(RECIPIENT, \'',last,'\'), \'',last,'\', ALDERMAN)', sep=""), ',', sep = "")
-  }
+#f = ""
+#for (last in council_last[40:52]) {
+#  f <- paste(f, paste('ALDERMAN = if_else(str_detect(RECIPIENT, \'',last,'\'), \'',last,'\', ALDERMAN)', sep=""), ',', sep = #"")
+#  }
 #f
 
 alderman_contributions <- contribution %>% 
@@ -280,16 +333,16 @@ ald_totals <- alderman_contributions %>%
 
 # Set names for annotations
 high_name <- 'BURKE'
-high_mid_name <- 'BEALE'
-mid_name <- 'CAPPLEMAN'
-low_mid_name <- 'SADLOWSKI'
+high_mid_name <- 'SOLIS'
+mid_name <- 'ERVIN'
+low_mid_name <- 'SANTIAGO'
 low_name <- 'TABARES'
 
 # Set amounts for annotations
-high_amt <- '$82k'
-high_mid_amt <- '$20k'
+high_amt <- '$84k'
+high_mid_amt <- '$22k'
 mid_amt <- '$14k'
-low_mid_amt <- '$5k'
+low_mid_amt <- '$6k'
 low_amt <- '$0k'
                      
 alderman_contributions %>% 
@@ -323,6 +376,9 @@ alderman_contributions %>%
 
 Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015,  received over \$150k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the second highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
 
+```{r}
+ald_totals
+```
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
 # shows more about who is and who isn't
@@ -336,13 +392,13 @@ paid_by_top20 <- compensation %>%
   filter(sum >= 1000000)
 
 alderman_contributions %>% 
-  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME, TRUE, FALSE))%>%
+  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE))%>%
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
   left_join(ald_totals, by = 'ALDERMAN') %>%
   group_by(ALDERMAN, LOBBYIST_NAME) %>% 
   summarise(sum = sum(AMOUNT), n = n()) %>%
   ggplot() +
-    geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = sum)) +
+    geom_tile(aes(reorder(LOBBYIST_NAME, sum), reorder(ALDERMAN, sum), fill = sum), color = 'black') +
     scale_fill_gradient(low = light_colors['green'], high = dark_colors['green'], label=dollar_format()) +
     labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
          subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
@@ -350,13 +406,22 @@ alderman_contributions %>%
          x = "Lobbyist",
          y = "Alderman (ordered by total contributions from included lobbyists)") +
     theme_claire +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          panel.grid = element_blank()) +
   guides(fill=guide_legend(title="Total Payments")) 
 ```
 
-The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). TODO ADD ADDITIONAL COMMENTARY
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). TODO ADD ADDITIONAL COMMENTARY 
+
+Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so records were added from IllinoisSunshine.com
 
 ```{r}
-lobbyists %>% 
-   filter(LOBBYIST_NAME == 'JOHN KELLY')
+compensation %>% 
+   filter(TOP20 == 'Yes') %>%
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
+  filter(sum >= 1000000)
+
+contribution %>% filter(str_detect(RECIPIENT, 'REILLY')) %>% arrange(desc(CONTRIBUTION_DATE))
 ```
+
