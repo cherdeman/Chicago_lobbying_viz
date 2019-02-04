@@ -251,6 +251,47 @@ compensation %>%
 
 Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Dring, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
 
+```{r alluvian}
+# industry > lawfirms > city council, others
+keep <- compensation %>% 
+  filter(PERIOD_START > as.Date('2014-12-31')) %>% 
+  group_by(CLIENT_INDUSTRY) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
+  arrange(desc(sum)) %>%
+  mutate(KEEP = if_else(sum > 7000000, 1, 0))
+
+lobbyist_name <- c("VICTOR REYES", "AMY KURSON", "PATRICK CAREY", "JOHN DUNN", "JOHN KELLY, JR.", 
+                   "DAVID DRING", "COURTNEY NOTTAGE", 
+                   "MICHAEL KASPER")
+lawfirm <- c("RK", "RK", "MW", "MW", "ALLCIRCO", 
+             "FOKN", "FOKN", 
+             "FOKN")
+law_names <- setNames(as.list(lawfirm), lobbyist_name)
+
+compensation %>% 
+  left_join(keep, by = "CLIENT_INDUSTRY") %>%
+  mutate(LAWFIRM = if_else(LOBBYIST_NAME %in% names(law_names), as.character(law_names[LOBBYIST_NAME]), "OTHER"),
+         REAL_ESTATE = if_else(str_detect(CLIENT_INDUSTRY, "REAL ESTATE"), "Yes", "No"),
+         REAL_ESTATE = if_else(is.na(REAL_ESTATE), "No", REAL_ESTATE)) %>%
+  filter(PERIOD_START > as.Date('2014-12-31')) %>%
+  group_by(TOP20, REAL_ESTATE, LAWFIRM) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
+  mutate(sum = sum/1000000) %>%
+  ggplot(aes(y = sum, axis1 = TOP20, axis2 = LAWFIRM)) +
+    geom_alluvium(aes(fill = REAL_ESTATE)) +
+    geom_stratum(width = 1/12, fill = "black", color = "grey") +
+    geom_label(stat = "stratum", label.strata = TRUE) +
+    scale_x_discrete(limits = c("Top 20 Clients", "Lawfirms"), expand = c(.05, .05)) +
+    scale_fill_manual(values = as.vector(dark_colors[4:3])) +
+    labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
+         subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
+         caption="Source: City of Chicago Lobbyist Data, Contributions",
+         x = "Lobbyist",
+         y = "Alderman (ordered by total contributions from included lobbyists)") +
+    theme_claire
+
+```
+
 # Direct Influence on City Council
 
 ```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
@@ -417,58 +458,5 @@ alderman_contributions %>%
 
 The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
 
-```{r}
-compensation %>% 
-   filter(TOP20 == 'Yes') %>%
-  group_by(LOBBYIST_NAME) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
-  filter(sum >= 1000000)
 
-contribution %>% filter(str_detect(RECIPIENT, 'REILLY')) %>% arrange(desc(CONTRIBUTION_DATE))
-
-alderman_contributions %>% 
-  filter(ALDERMAN == 'BURKE' & CONTRIBUTION_DATE > as.Date('2014-12-31')) %>% 
-  group_by(LOBBYIST_NAME) %>% 
-  summarise(sum = sum(AMOUNT)) %>% arrange(desc(sum))
-  ggplot(aes(month, sum, color = year)) +
-  geom_point()
-  
-alderman_contributions %>% 
-  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE),
-         YEAR = format(CONTRIBUTION_DATE, '%Y')) %>% 
-  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>% 
-  group_by(LOBBYIST_NAME, ALDERMAN, YEAR) %>% summarise(sum = sum(AMOUNT)) %>% 
-    ggplot(aes(y = sum, axis1 = LOBBYIST_NAME, axis2 = ALDERMAN)) +
-    geom_alluvium(aes(fill = YEAR)) +
-    geom_stratum(width = 1/12, fill = "black", color = "grey") +
-    geom_label(stat = "stratum", label.strata = TRUE) 
-
-# industry > lawfirms > city council, others
-compensation %>% 
-  filter(PERIOD_START > as.Date('2014-12-31')) %>% 
-  group_by(CLIENT_INDUSTRY) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
-  arrange(desc(sum))
-
-compensation
-
-lobbyist_name <- c("VICTOR REYES", "AMY KURSON", "PATRICK CAREY", "JOHN DUNN", "JOHN KELLY, JR.", 
-                   "DAVID DRING", "COURTNEY NOTTAGE", 
-                   "MICHAEL KASPER")
-lawfirm <- c("REYES KURSON", "REYES KURSON", "MCGUIRE WOODS", "MCGUIRE WOODS", "ALLCIRCO", 
-             "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE", "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE", 
-             "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE")
-law_names <- setNames(as.list(lawfirm), lobbyist_name)
-
-compensation %>% 
-  filter(PERIOD_START > as.Date('2014-12-31')) %>%
-  mutate(LAWFIRM = if_else(LOBBYIST_NAME %in% names(law_names), as.character(law_names[LOBBYIST_NAME]), "OTHER")) %>%
-  group_by(CLIENT_INDUSTRY, LAWFIRM) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
-    ggplot(aes(y = sum, axis1 = CLIENT_INDUSTRY, axis2 = LAWFIRM)) +
-    geom_alluvium() +
-    geom_stratum(width = 1/12, fill = "black", color = "grey") +
-    geom_label(stat = "stratum", label.strata = TRUE) 
-  
-```
 
