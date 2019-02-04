@@ -58,8 +58,8 @@ activity %>%
     geom_line(aes(group=ACTION, color=ACTION), size = 1) +
     scale_color_manual(values = as.vector(dark_colors[c('blue', 'purple', 'red')])) +
     scale_y_continuous(label=comma) +
-    labs(title="Growth in administrative actions has outpaced others since 2016",
-        subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
+    labs(title="Lobbying activity appears to have shifted toward Administrative \nactions since 2016",
+        subtitle="Annual Lobbying Actions by Type, 2012 - 2018",
         caption="Source: City of Chicago Lobbyist Data, Activity",
         x = "Years",
         y = "Number of Lobbying Actions") +
@@ -112,7 +112,7 @@ ggplot +
   scale_x_continuous(breaks = NULL) +
   labs(x = '', y = '') +
   facet_grid(rows = vars(ACTION), switch="both") +
-  labs(title="Real estate developments are the most frequently discussed items in lobbying meetings",
+  labs(title="Real estate developments are the most frequently discussed items \nin lobbying meetings",
          subtitle="Most Freqently Used Words in Activity Descriptions, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Activity") +
   theme_claire +
@@ -121,6 +121,8 @@ ggplot +
         strip.background = element_rect(color="black",size=0.5),
         legend.position = "none")
 ```
+
+Regardless of the type of activity (Administrative, Legislative, or Both), the most commonly used in the activity description are words like "zoning", "development", and "approval". This suggests the the majority of the lobbying meetings of all types center on issues surrounding real estate development. 
 
 # Private Industry Uses Lobbyists to Influence Government
 
@@ -218,10 +220,13 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
           legend.position = c(0.8, 0.2)) +
   guides(color=guide_legend(title="Industry of Top 20"))
 
-#activity %>% filter(str_detect(CLIENT_NAME, 'ACADEMY FOR URBAN'))
 ```
 
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
+
+```{r}
+activity
+```
 
 ```{r}
 # try log scale? add annotation,
@@ -245,7 +250,7 @@ compensation %>%
     guides(color=guide_legend(title="Paid Over $1M")) 
 ```
 
-Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 9 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each.
+Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
 
 # Direct Influence on City Council
 
@@ -369,15 +374,15 @@ alderman_contributions %>%
   labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
          subtitle="Distribution of Lobbyist Contributions to Aldermen Ordered by Total, 2015 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
-         x = "Alderman",
+         x = "Alderman (ordered by total lobbyist contributions)",
          y = "Contribution Amount") +
   theme_claire
 ```
 
-Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015,  received over \$150k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the second highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
+Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$600k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
 
 ```{r}
-ald_totals
+#ald_totals
 ```
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
@@ -411,9 +416,7 @@ alderman_contributions %>%
   guides(fill=guide_legend(title="Total Payments")) 
 ```
 
-The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). TODO ADD ADDITIONAL COMMENTARY 
-
-Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so records were added from IllinoisSunshine.com
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
 
 ```{r}
 compensation %>% 
