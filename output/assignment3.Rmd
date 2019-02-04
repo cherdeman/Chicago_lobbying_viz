@@ -104,7 +104,7 @@ word_counts <- admin %>%
 word_counts %>% 
 ggplot +
   aes(x = 1, y = 1, size = COUNT, label = WORD, color = ACTION) +
-  geom_text_repel(segment.size = 0, force = 200) +
+  geom_text_repel(segment.size = 0, force = 150) +
   scale_size(range = c(2, 8), guide = FALSE) +
   scale_color_manual(values = as.vector(dark_colors[c('blue', 'purple', 'red')])) +
   scale_y_continuous(breaks = NULL) +
@@ -233,7 +233,7 @@ compensation %>%
          cat = if_else(sum < 1, 'No', 'Yes')) %>%
   ggplot(aes(reorder(tools::toTitleCase(tolower(LOBBYIST_NAME)), log_sum), log_sum)) +
     geom_point(aes(color = cat), stat = 'identity', size = 3) +
-    scale_color_manual(values = as.vector(dark_colors[c("gray", "orange")])) +
+    scale_color_manual(values = as.vector(dark_colors[c("blue", "red")])) +
     labs(title="The Top 20 Clients Paid 63 Lobbyists Over the Time Period;\n 8 Earned Over $1M Each",
          subtitle="Log of Total Compensation to Lobbyists by Top 20 Clients, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
@@ -265,7 +265,7 @@ law_names <- setNames(as.list(lawfirm), lobbyist_name)
 
 full_industry <- c("REAL ESTATE & CONSTRUCTION", "INFO/TECH PRODUCTS OR SERVICES", "HOSPITALITY / RESTAURANT",
                    "TRADE & PROFESSIONAL ASSOCIATIONS", "FINANCIAL / BANKING")
-short_industry <- c("REAL ESTATE", "TECH", "RESTAURANTS",
+short_industry <- c("REAL ESTATE", "TECH", "HOSPITALITY",
                     "TRADE & PRO ASSCS", "FINANCIAL")
 industry_lookup <- setNames(as.list(short_industry), full_industry)
 
@@ -285,15 +285,18 @@ compensation %>%
     geom_stratum(width = 1/12, fill = "black", color = "grey") +
     geom_label(stat = "stratum", label.strata = TRUE) +
     scale_x_discrete(limits = c("Top 20 Clients", "Lawfirms"), expand = c(.05, .05)) +
+    scale_y_continuous(label=dollar_format()) +
     scale_fill_manual(values = as.vector(dark_colors[4:3])) +
-    labs(title="Though real estate related lobbying activities are most common, \ndevelopers aren't among the top 20 clients",
+    labs(title="Top 20 clients provide the majority of the lobbying revenue for the major lawfirms",
          subtitle="Compensation Flow Between Industries and Lawfirms, 2015-2018",
-         caption="Source: City of Chicago Lobbyist Data, Comepnsation",
-         y = "Total Compensation") +
+         caption="Source: City of Chicago Lobbyist Data, Compensation",
+         y = "Total Compensation (in Millions)") +
     theme_claire +
   theme(legend.position = c(.95, .85))
 
 ```
+
+The top 20 clients are both a large share of the compensation coming from their respective industries, and a significant proportion of the revenue at the major law firms. Also note that while real estate-related lobbying activities are the most commmon, no real estate developer is among the top 20 clients, nor do they employ any of the major lobbying firms.
 
 # Direct Influence on City Council
 
@@ -395,9 +398,9 @@ alderman_contributions %>%
   annotate("text", x = 'TABARES', y = 600, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 2) +
   annotate("text", x = 'ZALEWSKI', y = 700, label = "Resigned from 23rd Ward\n on May 31, 2018", size = 2) +
   annotate("rect", xmin = high_mid_name, xmax = 51, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
-  annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["blue"], alpha = .2) +
+  annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
   annotate("rect", xmin = low_mid_name, xmax = mid_name, ymin = 0, ymax = 1550, fill = light_colors["purple"], alpha = .2) +
-  annotate("rect", xmin = 0, xmax = low_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
+  annotate("rect", xmin = 0, xmax = low_mid_name, ymin = 0, ymax = 1550, fill = light_colors["blue"], alpha = .2) +
   annotate("text", x = 50.5, y = 200, label = "Charged with attempted extortion on Jan 3, 2019", size = 2, fontface = 2) +
   scale_y_continuous(label=dollar_format()) +
   labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
@@ -433,7 +436,7 @@ alderman_contributions %>%
   summarise(sum = sum(AMOUNT), n = n()) %>%
   ggplot() +
     geom_tile(aes(reorder(LOBBYIST_NAME, sum), reorder(ALDERMAN, sum), fill = sum), color = 'black') +
-    scale_fill_gradient(low = light_colors['green'], high = dark_colors['green'], label=dollar_format()) +
+    scale_fill_gradient(low = light_colors['blue'], high = dark_colors['blue'], label=dollar_format()) +
     labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
          subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
