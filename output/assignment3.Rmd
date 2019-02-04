@@ -104,7 +104,7 @@ word_counts <- admin %>%
 word_counts %>% 
 ggplot +
   aes(x = 1, y = 1, size = COUNT, label = WORD, color = ACTION) +
-  geom_text_repel(segment.size = 0, force = 150) +
+  geom_text_repel(segment.size = 0, force = 200) +
   scale_size(range = c(2, 8), guide = FALSE) +
   scale_color_manual(values = as.vector(dark_colors[c('blue', 'purple', 'red')])) +
   scale_y_continuous(breaks = NULL) +
@@ -224,10 +224,6 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
 
 ```{r}
-activity
-```
-
-```{r}
 # try log scale? add annotation,
 compensation %>% 
   filter(TOP20 == 'Yes') %>%
@@ -251,8 +247,8 @@ compensation %>%
 
 Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Dring, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
 
-```{r alluvian}
-# industry > lawfirms > city council, others
+```{r alluvian, warning=FALSE, fig.width = 8, fig.height = 8}
+# Set threshold for industries to show individually
 keep <- compensation %>% 
   filter(PERIOD_START > as.Date('2014-12-31')) %>% 
   group_by(CLIENT_INDUSTRY) %>% 
@@ -260,57 +256,50 @@ keep <- compensation %>%
   arrange(desc(sum)) %>%
   mutate(KEEP = if_else(sum > 7000000, 1, 0))
 
+# Set Lawfirm and Industry Lookups for labeling
 lobbyist_name <- c("VICTOR REYES", "AMY KURSON", "PATRICK CAREY", "JOHN DUNN", "JOHN KELLY, JR.", 
-                   "DAVID DRING", "COURTNEY NOTTAGE", 
-                   "MICHAEL KASPER")
-lawfirm <- c("RK", "RK", "MW", "MW", "ALLCIRCO", 
-             "FOKN", "FOKN", 
-             "FOKN")
+                   "DAVID DRING", "COURTNEY NOTTAGE", "MICHAEL KASPER")
+lawfirm <- c("", "RK", "MW", "MW", "ALLCIRCO", 
+             "FOKN", "FOKN", "FOKN")
 law_names <- setNames(as.list(lawfirm), lobbyist_name)
+
+full_industry <- c("REAL ESTATE & CONSTRUCTION", "INFO/TECH PRODUCTS OR SERVICES", "HOSPITALITY / RESTAURANT",
+                   "TRADE & PROFESSIONAL ASSOCIATIONS", "FINANCIAL / BANKING")
+short_industry <- c("REAL ESTATE", "TECH", "RESTAURANTS",
+                    "TRADE & PRO ASSCS", "FINANCIAL")
+industry_lookup <- setNames(as.list(short_industry), full_industry)
 
 compensation %>% 
   left_join(keep, by = "CLIENT_INDUSTRY") %>%
   mutate(LAWFIRM = if_else(LOBBYIST_NAME %in% names(law_names), as.character(law_names[LOBBYIST_NAME]), "OTHER"),
          REAL_ESTATE = if_else(str_detect(CLIENT_INDUSTRY, "REAL ESTATE"), "Yes", "No"),
-         REAL_ESTATE = if_else(is.na(REAL_ESTATE), "No", REAL_ESTATE)) %>%
-  filter(PERIOD_START > as.Date('2014-12-31')) %>%
-  group_by(TOP20, REAL_ESTATE, LAWFIRM) %>% 
+         REAL_ESTATE = if_else(is.na(REAL_ESTATE), "No", REAL_ESTATE),
+         CLIENT_INDUSTRY = if_else(KEEP == 0, "OTHER", CLIENT_INDUSTRY),
+         CLIENT_INDUSTRY = if_else(CLIENT_INDUSTRY %in% names(industry_lookup), as.character(industry_lookup[CLIENT_INDUSTRY]), CLIENT_INDUSTRY)) %>%
+  filter(PERIOD_START > as.Date('2014-12-31') & KEEP == 1) %>%
+  group_by(CLIENT_INDUSTRY, TOP20, LAWFIRM) %>% 
   summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
   mutate(sum = sum/1000000) %>%
-  ggplot(aes(y = sum, axis1 = TOP20, axis2 = LAWFIRM)) +
-    geom_alluvium(aes(fill = REAL_ESTATE)) +
+  ggplot(aes(y = sum, axis1 = CLIENT_INDUSTRY, axis2 = LAWFIRM)) +
+    geom_alluvium(aes(fill = TOP20)) +
     geom_stratum(width = 1/12, fill = "black", color = "grey") +
     geom_label(stat = "stratum", label.strata = TRUE) +
     scale_x_discrete(limits = c("Top 20 Clients", "Lawfirms"), expand = c(.05, .05)) +
     scale_fill_manual(values = as.vector(dark_colors[4:3])) +
-    labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
-         subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
-         caption="Source: City of Chicago Lobbyist Data, Contributions",
-         x = "Lobbyist",
-         y = "Alderman (ordered by total contributions from included lobbyists)") +
-    theme_claire
+    labs(title="Though real estate related lobbying activities are most common, \ndevelopers aren't among the top 20 clients",
+         subtitle="Compensation Flow Between Industries and Lawfirms, 2015-2018",
+         caption="Source: City of Chicago Lobbyist Data, Comepnsation",
+         y = "Total Compensation") +
+    theme_claire +
+  theme(legend.position = c(.95, .85))
 
 ```
 
 # Direct Influence on City Council
 
 ```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
-# demphasize names
-# annotate burke
-# dont color
-# quartiles for amounts, maybe box?
-# annotated legend at bottom of how box plot works - oconnor
-# meh background gray
-# repeate x axis on quartiles?
-# highlight committee charis or finance commities?
 
 council_last <- str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+')))
-#council_last
-#f = ""
-#for (last in council_last[40:52]) {
-#  f <- paste(f, paste('ALDERMAN = if_else(str_detect(RECIPIENT, \'',last,'\'), \'',last,'\', ALDERMAN)', sep=""), ',', sep = #"")
-#  }
-#f
 
 alderman_contributions <- contribution %>% 
   mutate(ALDERMAN = "") %>%
@@ -457,6 +446,3 @@ alderman_contributions %>%
 ```
 
 The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
-
-
-
