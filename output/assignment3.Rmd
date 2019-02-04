@@ -1,7 +1,7 @@
 ---
 title: "An Exploration of Lobbying in Chicago"
 author: "Claire Herdeman"
-date: "1/27/2019"
+date: "2/4/2019"
 output: 
   html_document:
     code_folding: hide
@@ -13,7 +13,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 library(tidyverse)
 library(stringr)
 library(magrittr)
@@ -22,9 +21,9 @@ library(here)
 library(readxl)
 library(zoo)
 library(ggrepel)
-#library(wesanderson)
 library(RColorBrewer)
 library(extrafont)
+library(ggalluvial)
 source("utils.R")
 source("load.R")
 source("aesthetics.R")
@@ -124,7 +123,7 @@ ggplot +
 
 Regardless of the type of activity (Administrative, Legislative, or Both), the most commonly used in the activity description are words like "zoning", "development", and "approval". This suggests the the majority of the lobbying meetings of all types center on issues surrounding real estate development. 
 
-# Private Industry Uses Lobbyists to Influence Government
+# Private Industry and Lobbying
 
 ```{r graph1, warning=FALSE, error=FALSE}
 # Top 25 flag
@@ -250,7 +249,7 @@ compensation %>%
     guides(color=guide_legend(title="Paid Over $1M")) 
 ```
 
-Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
+Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Dring, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
 
 # Direct Influence on City Council
 
@@ -426,5 +425,50 @@ compensation %>%
   filter(sum >= 1000000)
 
 contribution %>% filter(str_detect(RECIPIENT, 'REILLY')) %>% arrange(desc(CONTRIBUTION_DATE))
+
+alderman_contributions %>% 
+  filter(ALDERMAN == 'BURKE' & CONTRIBUTION_DATE > as.Date('2014-12-31')) %>% 
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(AMOUNT)) %>% arrange(desc(sum))
+  ggplot(aes(month, sum, color = year)) +
+  geom_point()
+  
+alderman_contributions %>% 
+  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE),
+         YEAR = format(CONTRIBUTION_DATE, '%Y')) %>% 
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>% 
+  group_by(LOBBYIST_NAME, ALDERMAN, YEAR) %>% summarise(sum = sum(AMOUNT)) %>% 
+    ggplot(aes(y = sum, axis1 = LOBBYIST_NAME, axis2 = ALDERMAN)) +
+    geom_alluvium(aes(fill = YEAR)) +
+    geom_stratum(width = 1/12, fill = "black", color = "grey") +
+    geom_label(stat = "stratum", label.strata = TRUE) 
+
+# industry > lawfirms > city council, others
+compensation %>% 
+  filter(PERIOD_START > as.Date('2014-12-31')) %>% 
+  group_by(CLIENT_INDUSTRY) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+compensation
+
+lobbyist_name <- c("VICTOR REYES", "AMY KURSON", "PATRICK CAREY", "JOHN DUNN", "JOHN KELLY, JR.", 
+                   "DAVID DRING", "COURTNEY NOTTAGE", 
+                   "MICHAEL KASPER")
+lawfirm <- c("REYES KURSON", "REYES KURSON", "MCGUIRE WOODS", "MCGUIRE WOODS", "ALLCIRCO", 
+             "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE", "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE", 
+             "FLETCHER, O'BRIEN, KASPER, AND NOTTAGE")
+law_names <- setNames(as.list(lawfirm), lobbyist_name)
+
+compensation %>% 
+  filter(PERIOD_START > as.Date('2014-12-31')) %>%
+  mutate(LAWFIRM = if_else(LOBBYIST_NAME %in% names(law_names), as.character(law_names[LOBBYIST_NAME]), "OTHER")) %>%
+  group_by(CLIENT_INDUSTRY, LAWFIRM) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT)) %>% 
+    ggplot(aes(y = sum, axis1 = CLIENT_INDUSTRY, axis2 = LAWFIRM)) +
+    geom_alluvium() +
+    geom_stratum(width = 1/12, fill = "black", color = "grey") +
+    geom_label(stat = "stratum", label.strata = TRUE) 
+  
 ```
 
