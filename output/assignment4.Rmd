@@ -27,6 +27,7 @@ library(ggalluvial)
 library(ggwordcloud)
 library(sf)
 library(ggmap)
+library(tigris)
 source("utils.R")
 source("load.R")
 source("aesthetics.R")
@@ -243,28 +244,6 @@ top20cloud <- activity %>%
 
 common_words <- c("A", "AND", "AT", "OF", "IN", "THE", "BE", "TO", "THAT", "HAVE",  
                   "IT", "/", "&", "FOR", "N", "E", "W", "S", "L", "WITH", "ON")
-
-# Probably a better way to do this
-#admin <- data.frame(table(b$WORDS_SEP[1])) %>%
-#  mutate(ACTION = 'ADMINISTRATIVE') %>%
-#  rename(WORD = Var1, COUNT = Freq) %>%
-#  arrange(desc(COUNT)) %>%
-#  slice(1:30)
-#both <- data.frame(table(b$WORDS_SEP[2])) %>%
-#  mutate(ACTION = 'BOTH') %>%
-#  rename(WORD = Var1, COUNT = Freq) %>%
-#  arrange(desc(COUNT)) %>%
-#  slice(1:30)
-#legis <- data.frame(table(b$WORDS_SEP[3])) %>%
-#  mutate(ACTION = 'LEGISLATIVE') %>%
-#  rename(WORD = Var1, COUNT = Freq) %>%
-#  arrange(desc(COUNT)) %>%
-#  slice(1:30)
-
-#word_counts <- admin %>%
-#  rbind(both) %>%
-#  rbind(legis) %>% 
-#  filter(!(WORD %in% common_words))
 
 word_counts_top20 <-  data.frame(table(top20cloud$WORDS_SEP[1])) %>%
   rename(WORD = Var1, COUNT = Freq) %>%
@@ -485,12 +464,19 @@ alderman_contributions %>%
 
 Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$600k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
 
-```{r map1, fig.height = 8, fig.width = 8, warning=FALSE}
+```{r map1, fig.height = 8, fig.width = 8, results = "hide", warning=FALSE, message = FALSE}
+options(tigris_class = "sf")
+water <- area_water("17", "031")
+roads <- roads(year = 2016, "17", "031") %>% filter(RTTYP %in% c("I", "S"))
+
 contrib_levels <- c(NA, '$0 - $4,999', '$5,000 - $9,999', '$10,000 - $19,999', '$20,000 - $39,999', '$40,000')
 addNA(contrib_levels)
 
-wards %>% 
-  left_join(council %>% select(`Ward/Office`, LAST_NAME), by = c("ward" = "Ward/Office")) %>% #glimpse() %>%
+ward_name <- wards %>% 
+  left_join(council %>% select(`Ward/Office`, LAST_NAME), by = c("ward" = "Ward/Office"))
+
+
+ward_name %>% #glimpse() %>%
   left_join(ald_totals, by = c("LAST_NAME" = "ALDERMAN")) %>%
   #filter(is.na(sum)) %>%
   mutate(Total = if_else(sum < 5000, '$0 - $4,999',
@@ -503,20 +489,124 @@ wards %>%
          lat = map_dbl(geometry, ~st_centroid(.x)[[2]])
          ) %>%
   ggplot() +
-  geom_sf(aes(fill = Total)) +
+  geom_sf(aes(fill = Total), size = 0.1) +
+  geom_sf(data = water, colour = "#eef7fa", size = .1,fill = "#e6f3f7") +
+  geom_sf(data = roads, size = .2, colour = dark_colors[['gray']]) +
   geom_text(aes(x = lon, y = lat, label = ward), size = 3) + 
-    labs(title="Lobbyist contributions to alderman mirror braoder investment trends",
-         subtitle="Map of Total Contributions to Alderman by Ward, 2015-2018",
+  labs(title="Lobbyist contributions to alderman mirror braoder investment trends",
+         subtitle="Total Lobbyist Contributions to Alderman by Ward, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "",
          y = "") +
-    scale_fill_manual(values = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), na.value = light_colors[['gray']]) +
-    theme_claire +
+  scale_fill_manual(values = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), 
+                    na.value = light_colors[['gray']]) +
+  coord_sf(xlim = c(-87.95, -87.5) , ylim = c(41.65, 42.02))+
+  theme_claire +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_blank())
 ```
 
 There appears to be some geographic concentration of contributions by lobbyists to alderman that mirrors patterns of investment in the city as a whole, with North Side alderman receiving larger contributions that those in the South and West sides. Since real estate development is a major driver of lobbying activity, this may be related to influence that aldermen have over zoning and development in their wards: lobbyists representing real estate clients may contribute more to aldermen who represent profitable areas for development. A notable exception to the geographic trend is Ward 14, which was represented by Ald. Burke before his indictment in January.
+
+```{r map2, fig.height = 8, fig.width = 8, warning=FALSE, message = FALSE, error = FALSE}
+building_permits_sf <- building_permits %>% 
+  filter(!is.na(lat) & ISSUE_DATE > as.Date('2014-12-31') & ISSUE_DATE < as.Date('2019-01-01')) %>% 
+  mutate(year = format(ISSUE_DATE, '%Y')) %>%
+  st_as_sf(coords = c("lon", "lat"), 
+                 crs = 4326, agr = "constant")
+  
+re_comp <- compensation %>% filter(str_detect(CLIENT_INDUSTRY, 'REAL ESTATE'))
+#compensation %>% filter(COMPEN)
+
+#re_comp %>% group_by(LOBBYIST_NAME) %>% summarise(sum = sum(COMPENSATION_AMOUNT)) %>% arrange(desc(sum))
+
+ald_re_totals <- alderman_contributions %>% 
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
+  mutate(paid_re = if_else(LOBBYIST_NAME %in% unique(re_comp$LOBBYIST_NAME), 'Yes', 'No')) %>% 
+  filter(paid_re == 'Yes') %>%
+  group_by(ALDERMAN) %>%
+  summarise(sum = sum(AMOUNT)) %>% arrange(desc(sum))
+
+#dev_ratio <- ward_name %>% #glimpse() %>%
+#  left_join(ald_re_totals, by = c("LAST_NAME" = "ALDERMAN")) %>%
+#  st_set_crs(4326) %>%
+#  st_join(building_permits_sf %>% select(ISSUE_DATE, ESTIMATED_COST, FULL_ADDRESS, geometry), 
+#          join = st_intersects, left = TRUE) %>%
+#  group_by(ward, sum) %>%
+#  summarise(total_costs = sum(ESTIMATED_COST), n = n()) %>%
+#  mutate(dollars_per_dev = sum/n, contrib_by_cost = sum/total_costs, cost_by_contrib = total_costs/sum) 
+
+ratio_levels <- c(NA, '< 20%', '20% - 40%', '40% - 60%', '60% - 80%', '80%+')
+#c(NA, '< $20', '$20 - $49', '$50 - $99', '$100 - $499', '$500+')
+addNA(ratio_levels)
+
+#dev_ratio %>%
+#  mutate(ratio = if_else(cost_by_contrib < 6000, '< $6,000',
+#                  if_else(cost_by_contrib >= 5000 & cost_by_contrib < 20000, '$5,000 - $20,000',
+ #                  if_else(cost_by_contrib >= 20000 & cost_by_contrib < 50000, '$20,000 - $49,999',
+#                    if_else(cost_by_contrib >= 50000 & cost_by_contrib < 100000, '$50,000 - $99,999',
+#                     if_else(cost_by_contrib >= 100000, '$100,000+', 'OTHER'))))),
+#         ratio = factor(ratio, levels = ratio_levels),
+#         lon = map_dbl(geometry, ~st_centroid(.x)[[1]]),
+#         lat = map_dbl(geometry, ~st_centroid(.x)[[2]])) %>%
+#  ggplot() +
+#    geom_sf(aes(fill = ratio), size = 0.1) +
+#    geom_sf(data = water, colour = "#eef7fa", size = .1,fill = "#e6f3f7") +
+#    geom_sf(data = roads, size = .2, colour = dark_colors[['gray']]) +
+#    geom_text(aes(x = lon, y = lat, label = ward), size = 3) + 
+#    labs(title="Lobbyist contributions to alderman mirror braoder investment trends",
+#         subtitle="Map of Total Contributions to Alderman by Ward, 2015-2018",
+#         caption="Source: City of Chicago Lobbyist Data, Contributions",
+#         x = "",
+#         y = "") +
+#    scale_fill_manual(values = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), 
+#                      na.value = light_colors[['gray']]) +
+#   coord_sf(xlim = c(-87.95, -87.5) , ylim = c(41.65, 42.02))+
+#   theme_claire +
+#   theme(panel.grid.major.x = element_blank(),
+#        panel.grid.major.y = element_blank())
+
+
+#dev_ratio %>% arrange(desc(cost_by_contrib))
+ald_re_ratio <- 
+  ald_re_totals %>% 
+  left_join(ald_totals, by = 'ALDERMAN') %>% 
+  mutate(re_ratio = sum.x/sum.y) %>% 
+  arrange(desc(re_ratio))
+
+ward_name %>%
+  left_join(ald_re_ratio, by = c("LAST_NAME" = "ALDERMAN")) %>%
+  mutate(proportion = if_else(re_ratio < 0.2, '< 20%',
+                  if_else(re_ratio >= 0.2 & re_ratio < 0.4, '20% - 40%',
+                   if_else(re_ratio >= 0.4 & re_ratio < 0.6, '40% - 60%',
+                    if_else(re_ratio >= 0.6 & re_ratio < 0.8, '60% - 80%',
+                     if_else(re_ratio >= 0.8, '80%+', 'OTHER'))))),
+         ratio = factor(proportion, levels = ratio_levels),
+         lon = map_dbl(geometry, ~st_centroid(.x)[[1]]),
+         lat = map_dbl(geometry, ~st_centroid(.x)[[2]])) %>%
+  ggplot() +
+  geom_sf(aes(fill = proportion), size = 0.1) +
+  geom_sf(data = water, colour = "#eef7fa", size = .1,fill = "#e6f3f7") +
+  geom_sf(data = roads, size = .2, colour = dark_colors[['gray']]) +
+  geom_text(aes(x = lon, y = lat, label = ward), size = 3) + 
+  labs(title="Wards with a higher share of real estate contributions \nmay be more influenced by the real estate industry",
+       subtitle="% Real Estate Lobbyist Contributions to Alderman by Ward, 2015-2018",
+       caption="Source: City of Chicago Lobbyist Data, Contributions",
+       x = "",
+       y = "") +
+  scale_fill_manual(values = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), 
+                    na.value = light_colors[['gray']]) +# = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), 
+                      #na.value = light_colors[['gray']]) +
+   coord_sf(xlim = c(-87.95, -87.5) , ylim = c(41.65, 42.02))+
+   theme_claire +
+   theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank()) +
+   guides(fill=guide_legend(title="% Contributions for Real Estate"))
+  
+#ald_re_ratio
+```
+
+The proportion of lobbyist contributions to aldermen that comes from lobbyists that commonly represent real estate projects varies widely by geography. Those that receive a high proportion of contributions from real estate lobbyists may be more subject to influence from real estate developments, though some alderman with a greater diversity of contribution may have higher dollar amounts coming from real estate lobbyists.
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
 # shows more about who is and who isn't
@@ -551,18 +641,5 @@ alderman_contributions %>%
 
 The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
 
-```{r map2}
-building_permits %>% 
-  filter(str_detect(PERMIT_TYPE, "NEW CONSTRUCTION")) %>%
-  mutate(FULL_ADDRESS = paste(STREET_NUMBER, `STREET DIRECTION`, STREET_NAME, SUFFIX, 'Chicago, IL', sep = " ")) %>%
-  slice(1:10) %>%
-  mutate_geocode(FULL_ADDRESS)
 
-re_comp <- compensation %>% filter(str_detect(CLIENT_INDUSTRY, 'REAL ESTATE'))
-compensation %>% filter(COMPEN)
-re_comp %>% group_by(LOBBYIST_NAME) %>% summarise(sum = sum(COMPENSATION_AMOUNT))
-
-alderman_contributions %>% 
-  mutate(paid_re = if_else(LOBBYIST_NAME %in% unique(re_comp$LOBBYIST_NAME), 'Yes', 'No'))
-```
 
