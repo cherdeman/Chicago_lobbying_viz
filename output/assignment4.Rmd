@@ -129,11 +129,8 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
         strip.background = element_rect(color="black",size=0.5),
         legend.position = "none")
 ```
-```{r}
-activity %>% filter(str_detect(ACTION_SOUGHT, "RIDE")) %>% arrange(desc(PERIOD_START))
-```
 
-Regardless of the type of activity (Administrative, Legislative, or Both), the most commonly used in the activity description are words like "zoning", "development", and "approval". This suggests the the majority of the lobbying meetings of all types center on issues surrounding real estate development. 
+The most commonly used words in the descriptions of lobbying activity include "zoning", "development", and "approval". This suggests that issues of real estate development and construction are the most common items discussed in lobbying meetings.  
 
 # Private Industry and Lobbying
 
@@ -284,7 +281,7 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
   scale_x_continuous(breaks = NULL) +
   labs(x = '', y = '') +
   #facet_grid(rows = vars(ACTION), switch="both") +
-  labs(title="Concerns among the top 20 are different",
+  labs(title="The top 20 clients are discussing the specific concerns \nof their businesses with city officials",
          subtitle="Most Freqently Used Words in Activity Descriptions Among the Top 20 Clients, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Activity") +
   theme_claire +
@@ -293,6 +290,8 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
         strip.background = element_rect(color="black",size=0.5),
         legend.position = "none")
 ```
+
+When compared to the general wordclound above, it is clear that these words are more specific to the interests of the top 20 clients. There is more discussion of high-level business concerns like regulation. We also see terms relating to the specific businesses of the top 20 clients, like "ridesharing" for Uber and Lyft, and "digital network", the term describing the network of screens displaying advertisements commonly seen at airports, for the JCDecaux Group. 
 
 ```{r}
 # try log scale? add annotation,
@@ -506,7 +505,7 @@ wards %>%
   ggplot() +
   geom_sf(aes(fill = Total)) +
   geom_text(aes(x = lon, y = lat, label = ward), size = 3) + 
-    labs(title="",
+    labs(title="Lobbyist contributions to alderman mirror braoder investment trends",
          subtitle="Map of Total Contributions to Alderman by Ward, 2015-2018",
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "",
@@ -516,8 +515,8 @@ wards %>%
   theme(panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_blank())
 ```
-[TEXT HERE]
 
+There appears to be some geographic concentration of contributions by lobbyists to alderman that mirrors patterns of investment in the city as a whole, with North Side alderman receiving larger contributions that those in the South and West sides. Since real estate development is a major driver of lobbying activity, this may be related to influence that aldermen have over zoning and development in their wards: lobbyists representing real estate clients may contribute more to aldermen who represent profitable areas for development. A notable exception to the geographic trend is Ward 14, which was represented by Ald. Burke before his indictment in January.
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
 # shows more about who is and who isn't
@@ -558,5 +557,12 @@ building_permits %>%
   mutate(FULL_ADDRESS = paste(STREET_NUMBER, `STREET DIRECTION`, STREET_NAME, SUFFIX, 'Chicago, IL', sep = " ")) %>%
   slice(1:10) %>%
   mutate_geocode(FULL_ADDRESS)
+
+re_comp <- compensation %>% filter(str_detect(CLIENT_INDUSTRY, 'REAL ESTATE'))
+compensation %>% filter(COMPEN)
+re_comp %>% group_by(LOBBYIST_NAME) %>% summarise(sum = sum(COMPENSATION_AMOUNT))
+
+alderman_contributions %>% 
+  mutate(paid_re = if_else(LOBBYIST_NAME %in% unique(re_comp$LOBBYIST_NAME), 'Yes', 'No'))
 ```
 
