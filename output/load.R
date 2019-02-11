@@ -161,4 +161,13 @@ combinations %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
 # Councilmen
 council <- read_excel(here("data", "aldermen.xlsx"))
 
+# Ward boundaries
+wards <- st_read(here("data","ward_boundaries", "geo_export_ec0d79ac-2de0-45ec-9303-4c729a89f2f7.shp"))
+
+# Building Permits
+building_permits <- read_csv(here("data", "geo_building_permit.csv")) %>%
+  mutate(ISSUE_DATE = as.Date(ISSUE_DATE, '%m/%d/%Y'))
+
+
+
 

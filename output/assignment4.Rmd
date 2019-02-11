@@ -26,6 +26,7 @@ library(extrafont)
 library(ggalluvial)
 library(ggwordcloud)
 library(sf)
+library(ggmap)
 source("utils.R")
 source("load.R")
 source("aesthetics.R")
@@ -51,6 +52,7 @@ The recent controversy surrounding unregistered lobbying by individuals contacti
 #act_summ <- 
   
 activity %>% 
+  #filter(!str_detect(CLIENT_INDUSTRY, 'REAL ESTATE')) %>%
   mutate(year = format(PERIOD_START, '%Y'),
          PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
   group_by(year, ACTION) %>%
@@ -126,6 +128,9 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
         panel.border = element_rect(color="black",size=1, fill=NA),
         strip.background = element_rect(color="black",size=0.5),
         legend.position = "none")
+```
+```{r}
+activity %>% filter(str_detect(ACTION_SOUGHT, "RIDE")) %>% arrange(desc(PERIOD_START))
 ```
 
 Regardless of the type of activity (Administrative, Legislative, or Both), the most commonly used in the activity description are words like "zoning", "development", and "approval". This suggests the the majority of the lobbying meetings of all types center on issues surrounding real estate development. 
@@ -230,7 +235,7 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
 
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
 
-```{r word_cloud}
+```{r word_cloud_all}
 top20cloud <- activity %>%
   mutate(TOP20 = ifelse(CLIENT_NAME %in% top_20$CLIENT_NAME, "Yes", "No")) %>%
   filter(PERIOD_START > as.Date('2014-12-31') & TOP20 == "Yes") %>%
@@ -367,12 +372,10 @@ The top 20 clients are both a large share of the compensation coming from their 
 # Direct Influence on City Council
 
 ```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
-
-council_last <- str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+')))
 council %<>%
-  mutate(LAST_NAME = str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+'))))
-
-
+  mutate(LAST_NAME = str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+'))),
+         LAST_NAME = if_else(str_detect(` Person Name`, 'Moore, D'), 'DAVID MOORE', LAST_NAME),
+         LAST_NAME = if_else(str_detect(` Person Name`, 'Moore, J'), 'JOE MOORE', LAST_NAME))
 
 alderman_contributions <- contribution %>% 
   mutate(ALDERMAN = "") %>%
@@ -430,7 +433,7 @@ alderman_contributions <- contribution %>%
          ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'ZALEWSKI'), 'ZALEWSKI', ALDERMAN)
          ) %>% 
-  filter(ALDERMAN != "" & ALDERMAN != "EMANUEL")
+  filter(ALDERMAN != "" & ALDERMAN != "EMANUEL" & ALDERMAN != "VALENCIA")
   
 ald_totals <- alderman_contributions %>% 
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
@@ -440,16 +443,16 @@ ald_totals <- alderman_contributions %>%
 
 # Set names for annotations
 high_name <- 'BURKE'
-high_mid_name <- 'SOLIS'
-mid_name <- 'ERVIN'
-low_mid_name <- 'SANTIAGO'
+high_mid_name <- 'LOPEZ'
+mid_name <- 'CAPPLEMAN'
+low_mid_name <- 'SADLOWSKI'
 low_name <- 'TABARES'
 
 # Set amounts for annotations
 high_amt <- '$84k'
-high_mid_amt <- '$22k'
+high_mid_amt <- '$20k'
 mid_amt <- '$14k'
-low_mid_amt <- '$6k'
+low_mid_amt <- '$5k'
 low_amt <- '$0k'
                      
 alderman_contributions %>% 
@@ -459,7 +462,7 @@ alderman_contributions %>%
   ggplot() +
   geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
   coord_flip() +
-  annotate("text", x = 50.7, y = 1600, label = "Total", size = 3) +
+  annotate("text", x = 49.7, y = 1600, label = "Total", size = 3) +
   annotate("text", x = high_name, y = 1600, label = high_amt, size = 3) +
   annotate("text", x = high_mid_name, y = 1600, label = high_mid_amt, size = 3) +
   annotate("text", x = mid_name, y = 1600, label = mid_amt, size = 3) +
@@ -467,11 +470,11 @@ alderman_contributions %>%
   annotate("text", x = low_name, y = 1600, label = low_amt, size = 3) +
   annotate("text", x = 'TABARES', y = 600, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 2) +
   annotate("text", x = 'ZALEWSKI', y = 700, label = "Resigned from 23rd Ward\n on May 31, 2018", size = 2) +
-  annotate("rect", xmin = high_mid_name, xmax = 51, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
+  annotate("rect", xmin = high_mid_name, xmax = 50, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
   annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
   annotate("rect", xmin = low_mid_name, xmax = mid_name, ymin = 0, ymax = 1550, fill = light_colors["purple"], alpha = .2) +
   annotate("rect", xmin = 0, xmax = low_mid_name, ymin = 0, ymax = 1550, fill = light_colors["blue"], alpha = .2) +
-  annotate("text", x = 50.5, y = 200, label = "Charged with attempted extortion on Jan 3, 2019", size = 2, fontface = 2) +
+  annotate("text", x = 49.5, y = 200, label = "Charged with attempted extortion on Jan 3, 2019", size = 2, fontface = 2) +
   scale_y_continuous(label=dollar_format()) +
   labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
          subtitle="Distribution of Lobbyist Contributions to Aldermen Ordered by Total, 2015 - 2018",
@@ -483,9 +486,38 @@ alderman_contributions %>%
 
 Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$600k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
 
-```{r}
-#ald_totals
+```{r map1, fig.height = 8, fig.width = 8, warning=FALSE}
+contrib_levels <- c(NA, '$0 - $4,999', '$5,000 - $9,999', '$10,000 - $19,999', '$20,000 - $39,999', '$40,000')
+addNA(contrib_levels)
+
+wards %>% 
+  left_join(council %>% select(`Ward/Office`, LAST_NAME), by = c("ward" = "Ward/Office")) %>% #glimpse() %>%
+  left_join(ald_totals, by = c("LAST_NAME" = "ALDERMAN")) %>%
+  #filter(is.na(sum)) %>%
+  mutate(Total = if_else(sum < 5000, '$0 - $4,999',
+                  if_else(sum >= 5000 & sum < 10000, '$5,000 - $9,999',
+                   if_else(sum >= 10000 & sum < 20000, '$10,000 - $19,999',
+                    if_else(sum >= 20000 & sum < 40000, '$20,000 - $39,999',
+                     if_else(sum >= 40000, '$40,000', 'OTHER'))))),
+         Total = factor(Total, levels = contrib_levels),
+         lon = map_dbl(geometry, ~st_centroid(.x)[[1]]),
+         lat = map_dbl(geometry, ~st_centroid(.x)[[2]])
+         ) %>%
+  ggplot() +
+  geom_sf(aes(fill = Total)) +
+  geom_text(aes(x = lon, y = lat, label = ward), size = 3) + 
+    labs(title="",
+         subtitle="Map of Total Contributions to Alderman by Ward, 2015-2018",
+         caption="Source: City of Chicago Lobbyist Data, Contributions",
+         x = "",
+         y = "") +
+    scale_fill_manual(values = c('#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'), na.value = light_colors[['gray']]) +
+    theme_claire +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank())
 ```
+[TEXT HERE]
+
 
 ```{r lobbypay, fig.height = 8, fig.width = 8}
 # shows more about who is and who isn't
@@ -520,17 +552,11 @@ alderman_contributions %>%
 
 The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
 
-```{r map1}
-wards <- st_read(here("data","ward_boundaries", "geo_export_ec0d79ac-2de0-45ec-9303-4c729a89f2f7.shp"))
-
-wards %>% 
-  left_join(council %>% select(`Ward/Office`, LAST_NAME), by = c("ward" = "Ward/Office")) %>% glimpse() %>%
-  left_join(ald_totals, by = c("LAST_NAME" = "ALDERMAN")) %>%
-  ggplot() +
-  geom_sf(aes(fill = sum))
-
-glimpse(wards)
-
-ggplot(wards) +
-  geom_sf()
+```{r map2}
+building_permits %>% 
+  filter(str_detect(PERMIT_TYPE, "NEW CONSTRUCTION")) %>%
+  mutate(FULL_ADDRESS = paste(STREET_NUMBER, `STREET DIRECTION`, STREET_NAME, SUFFIX, 'Chicago, IL', sep = " ")) %>%
+  slice(1:10) %>%
+  mutate_geocode(FULL_ADDRESS)
 ```
+
