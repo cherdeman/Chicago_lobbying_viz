@@ -123,7 +123,7 @@ compensation %<>% mutate(TOP20 = ifelse(CLIENT_NAME %in% top_20$CLIENT_NAME, "Ye
 
 # Plot
 c <- compensation %>% 
-  filter(PERIOD_START < as.Date('2019-01-01')) %>%
+  filter(PERIOD_START < as.Date('2015-01-01')) %>%
   mutate(year = format(PERIOD_START, '%Y'),
          PERIOD_START = as.yearqtr(PERIOD_START, format = "%YQ%q")) %>%
   group_by(TOP20, PERIOD_START, year) %>%
@@ -133,10 +133,8 @@ c <- compensation %>%
     geom_col(aes(fill=factor(TOP20, levels=c("No","Yes")))) + 
     facet_grid(.~ year, space = 'free_x', scales = 'free_x', switch = 'x') +
     scale_y_continuous(label=dollar_format()) +
-    scale_x_yearqtr(breaks = seq(from = 2012, to = 2018.75, by = 0.25), format = "Q%q") +
+    #scale_x_yearqtr(breaks = seq(from = 2012, to = 2018.75, by = 0.25), format = "Q%q") +
     scale_fill_manual(values=c(as.vector(light_colors['blue']), as.vector(dark_colors['blue']))) + 
-    #annotate(geom = "text", x = 2012.5 + 1 * (0:6), y = -1, 
-    #         label = c("2012", "2013", "2014", "2015", "2016", "2017", "2018"), size = 3) +
     labs(title="The Top 20 Clients Pay ~25% of Lobbyist Compensation",
          subtitle="Total Quarterly Lobbyist Compensation, 2012 - 2018",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
@@ -165,6 +163,8 @@ c + geom_point(data = points,
                       labels = c(""), 
                       guide = "legend")
 
+
+c
 ```
 
 Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$3.6M to \$6.2M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
