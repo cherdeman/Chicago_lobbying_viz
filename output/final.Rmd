@@ -28,6 +28,9 @@ library(ggwordcloud)
 library(sf)
 library(ggmap)
 library(tigris)
+library(GGally)
+library(network)
+library(sna)
 source("utils.R")
 source("load.R")
 source("aesthetics.R")
@@ -121,19 +124,31 @@ top_20 <- compensation %>%
 # Add flag to compensation df
 compensation %<>% mutate(TOP20 = ifelse(CLIENT_NAME %in% top_20$CLIENT_NAME, "Yes", "No"))
 
+quarters <- c("Q1", "Q2", "Q3", "Q4")
+
 # Plot
 c <- compensation %>% 
-  filter(PERIOD_START < as.Date('2015-01-01')) %>%
+  filter(PERIOD_START < as.Date('2019-01-01')) %>%
   mutate(year = format(PERIOD_START, '%Y'),
-         PERIOD_START = as.yearqtr(PERIOD_START, format = "%YQ%q")) %>%
-  group_by(TOP20, PERIOD_START, year) %>%
+         quarter = if_else(format(PERIOD_START, "%m") == "01", "Q1",
+                    if_else(format(PERIOD_START, "%m") == "04", "Q2",
+                     if_else(format(PERIOD_START, "%m") == "07", "Q3",
+                      if_else(format(PERIOD_START, "%m") == "10", "Q4", "MISTAKE"))))) %>%
+         #quarter = format(PERIOD_START, '%q')) %>%
+         #PERIOD_START = as.yearqtr(PERIOD_START, format = "%YQ%q")) %>%
+  group_by(TOP20, quarter, year) %>%
   summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
   mutate(sum = sum/1000000) %>%
-  ggplot(aes(PERIOD_START, sum)) +
+  bind_rows(data_frame(TOP20 = c("No", "Yes"), quarter = c("Q2", "Q2"), 
+                       year = c("2012", "2012"), sum = c(0,0), n = c(0,0))) %>% 
+  mutate(sum = if_else(TOP20 == "No" & year == "2012" & quarter == "Q1", sum/2, sum),
+         sum = if_else(TOP20 == "Yes" & year == "2012" & quarter == "Q1", sum/2, sum),
+         sum = if_else(TOP20 == "No" & year == "2012" & quarter == "Q2", 9.1936827, sum),
+         sum = if_else(TOP20 == "Yes" & year == "2012" & quarter == "Q2", 1.8108280, sum)) %>%
+  ggplot(aes(quarter, sum)) +
     geom_col(aes(fill=factor(TOP20, levels=c("No","Yes")))) + 
     facet_grid(.~ year, space = 'free_x', scales = 'free_x', switch = 'x') +
     scale_y_continuous(label=dollar_format()) +
-    #scale_x_yearqtr(breaks = seq(from = 2012, to = 2018.75, by = 0.25), format = "Q%q") +
     scale_fill_manual(values=c(as.vector(light_colors['blue']), as.vector(dark_colors['blue']))) + 
     labs(title="The Top 20 Clients Pay ~25% of Lobbyist Compensation",
          subtitle="Total Quarterly Lobbyist Compensation, 2012 - 2018",
@@ -151,23 +166,25 @@ c <- compensation %>%
 points <- compensation %>% 
   filter(PERIOD_START < as.Date('2019-01-01')) %>%
   mutate(year = format(PERIOD_START, '%Y'),
-         PERIOD_START = as.yearqtr(PERIOD_START, format = "%YQ%q")) %>%
-  group_by(PERIOD_START, year) %>%
-  summarise(pct_25 = sum(COMPENSATION_AMOUNT) * .25/1000000, n = n())
+         quarter = if_else(format(PERIOD_START, "%m") == "01", "Q1",
+                    if_else(format(PERIOD_START, "%m") == "04", "Q2",
+                     if_else(format(PERIOD_START, "%m") == "07", "Q3",
+                      if_else(format(PERIOD_START, "%m") == "10", "Q4", "MISTAKE"))))) %>%
+  group_by(year, quarter) %>%
+  summarise(pct_25 = sum(COMPENSATION_AMOUNT) * .25/1000000, n = n()) %>%
+  bind_rows(data_frame(year = "2012", quarter = "Q2", pct_25 = 5.50/2, n = 0)) %>%
+  mutate(pct_25 = if_else(year == "2012" & quarter == "Q1", pct_25/2, pct_25))
 
 # layer 25% point
 c + geom_point(data = points, 
-  aes(PERIOD_START, pct_25, color = dark_colors['red'])) +
+  aes(quarter, pct_25, color = dark_colors['red'])) +
   facet_grid(.~ year, space = 'free_x', scales = 'free_x', switch = 'x') +
   scale_color_identity(name = "25% Mark", 
                       labels = c(""), 
                       guide = "legend")
-
-
-c
 ```
 
-Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$3.6M to \$6.2M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
+Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$36.4M to \$61.6M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
 
 ```{r graph2, fig.height = 6, fig.width = 7, warning=FALSE, error=FALSE}
 # Map actual name to target name
@@ -198,11 +215,11 @@ t <-compensation %>%
   mutate(sum = sum/1000000) %>%
   ggplot() +
     geom_point(aes(n, sum), color = light_colors["gray"], size = 2, alpha = 0.4) +
-    annotate("text", x = 300, y = .7, label = "99% of clients paid under\n $2.5M to lobbyists\n in the time period", size = 3)
+    annotate("text", x = 350, y = 2.5, label = "99% of clients paid under\n $2.5M to lobbyists\n in the time period", size = 3)
 
 t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7) +
     geom_text_repel(data = top, aes(n, sum, label = NICK_NAME), check_overlap = TRUE, size = 3, hjust = 0, nudge_x = 0.1) + 
-    scale_y_continuous(label=dollar_format()) +
+    scale_y_continuous(breaks = seq(0, 10, 2), label=dollar_format(largest_with_cents = 0)) +
     scale_color_manual(values = as.vector(dark_colors[1:6])) +
     xlim(0, 650) +
     labs(title="Tech Companies, Healthcare Providers, and Industry Associations\n are Among the Highest Paying Clients",
@@ -213,17 +230,17 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
     theme_claire +
     theme(legend.text=element_text(size=6),
           legend.title=element_text(size=8),
-          legend.position = c(0.8, 0.2)) +
+          legend.position = c(0.85, 0.2)) +
   guides(color=guide_legend(title="Industry of Top 20"))
 
 ```
 
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation paid to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
 
-```{r word_cloud_all}
+```{r word_cloud_all, warning=FALSE}
 top20cloud <- activity %>%
   mutate(TOP20 = ifelse(CLIENT_NAME %in% top_20$CLIENT_NAME, "Yes", "No")) %>%
-  filter(PERIOD_START > as.Date('2014-12-31') & TOP20 == "Yes") %>%
+  filter(PERIOD_START < as.Date('2019-01-01') & TOP20 == "Yes") %>%
   mutate(ACTION_SOUGHT_WORDS = as.vector(str_split(ACTION_SOUGHT, pattern = c(" ", ", ")))) %>%
   #group_by(ACTION) %>%
   summarise(WORDS = paste(ACTION_SOUGHT, collapse = ", ")) %>%
@@ -248,7 +265,7 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
   labs(x = '', y = '') +
   #facet_grid(rows = vars(ACTION), switch="both") +
   labs(title="The top 20 clients are discussing the specific concerns \nof their businesses with city officials",
-         subtitle="Most Freqently Used Words in Activity Descriptions Among the Top 20 Clients, 2015-2018",
+         subtitle="Most Freqently Used Words in Activity Descriptions Among the Top 20 Clients, 2012-2018",
          caption="Source: City of Chicago Lobbyist Data, Activity") +
   theme_claire +
   theme(panel.background = element_blank(), 
@@ -257,12 +274,12 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
         legend.position = "none")
 ```
 
-When compared to the general wordclound above, it is clear that these words are more specific to the interests of the top 20 clients. There is more discussion of high-level business concerns like regulation. We also see terms relating to the specific businesses of the top 20 clients, like "ridesharing" for Uber and Lyft, and "digital network", the term describing the network of screens displaying advertisements commonly seen at airports, for the JCDecaux Group. 
+When compared to the general wordclound above, it is clear that these words are more specific to the interests of the top 20 clients. There is more discussion of high-level business concerns like regulations and operations. We also see terms relating to the specific businesses of the top 20 clients, like "ridesharing" for Uber and Lyft, and "digital network", the term describing the network of screens displaying advertisements commonly seen at airports, for the JCDecaux Group. 
 
 ```{r}
 # try log scale? add annotation,
 compensation %>% 
-  filter(TOP20 == 'Yes') %>%
+  filter(TOP20 == 'Yes' & PERIOD_START < as.Date('2019-01-01')) %>%
   group_by(LOBBYIST_NAME) %>% 
   summarise(sum = sum(COMPENSATION_AMOUNT), log_sum = log10(sum(COMPENSATION_AMOUNT)), n = n()) %>% 
   mutate(sum = sum/1000000,
