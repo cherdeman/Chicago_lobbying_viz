@@ -89,6 +89,7 @@ compensation %<>% left_join(cli_industry, by="CLIENT_NAME") %>%
 # Political contributions
 
 # Kurson Reyes Contributions
+
 kurson_reyes <- read_csv(here("data", "kurson_reyes_receipts.csv")) %>%
   select(committee_name, last_name, first_name, received_date, aggregate_amount) %>%
   mutate(committee_name = str_to_upper(committee_name),
@@ -96,7 +97,8 @@ kurson_reyes <- read_csv(here("data", "kurson_reyes_receipts.csv")) %>%
          first_name = str_to_upper(first_name),
          # Group Reyes Kurson and Amy Kurson in Lobbyist Name
          LOBBYIST_NAME = 'REYES KURSON',
-         received_date = as.Date(received_date, '%Y-%m-%d')) %>%
+         # need to fix date transformation here!
+         received_date = as.Date(str_match(received_date, '^[0-9/]+'), '%m/%d/%y')) %>%
   filter(received_date > as.Date('2011-12-31'))
 colnames(kurson_reyes) <- c("RECIPIENT", "LOBBYIST_LAST_NAME", "LOBBYIST_FIRST_NAME", 
                             "CONTRIBUTION_DATE", "AMOUNT", "LOBBYIST_NAME") 
