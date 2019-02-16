@@ -16,8 +16,8 @@ dark_colors = c(
   'orange' = "#F98400", 
   'red' = "#CB2314", 
   'blue' = "#046C9A", 
-  'purple' = "#273046",
-  'green' = "#2F401F", # old green #354823
+  'purple' = "#2F1554",
+  'green' = "#357623", # "#2F401F", # old green #354823
   'gray' = "#595959"
 )
 
