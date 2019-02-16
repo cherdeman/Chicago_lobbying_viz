@@ -103,7 +103,7 @@ ggplot(aes(size = COUNT, label = WORD, color = COUNT)) +
          caption="Source: City of Chicago Lobbyist Data, Activity") +
   theme_claire +
   theme(panel.background = element_blank(), 
-        panel.border = element_rect(color="black",size=1, fill=NA),
+        panel.border = element_blank(), #element_rect(color="black",size=1, fill=NA),
         strip.background = element_rect(color="black",size=0.5),
         legend.position = "none")
 ```
@@ -113,6 +113,8 @@ Chicago is currently in the midst of a [construction boom](https://journalstar.c
 # Private Industry and Lobbying
 
 ```{r graph1, warning=FALSE, error=FALSE}
+# highlight seasonality
+
 # Top 20 flag
 top_20 <- compensation %>%
   filter(PERIOD_START < as.Date('2019-01-01')) %>%
@@ -177,17 +179,22 @@ points <- compensation %>%
   mutate(pct_25 = if_else(year == "2012" & quarter == "Q1", pct_25/2, pct_25))
 
 # layer 25% point
-c + geom_point(data = points, 
+c <- c + geom_point(data = points, 
   aes(quarter, pct_25, color = dark_colors['red'])) +
   facet_grid(.~ year, space = 'free_x', scales = 'free_x', switch = 'x') +
   scale_color_identity(name = "25% Mark", 
                       labels = c(""), 
                       guide = "legend")
+
+text_df <- data_frame(year = "2012", quarter = "Q2",pct_25 = 21)
+c + geom_text(data = text_df, aes(quarter, pct_25, label = 'Total annual \nlobbyist comp \nincreased 69% \nbetween 2012  \nand 2018,\n from $36.4M \n to $61.6M'), size = 2.5)
 ```
 
 Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$36.4M to \$61.6M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
 
 ```{r graph2, fig.height = 6, fig.width = 7, warning=FALSE, error=FALSE}
+#highlight annotation
+
 # Map actual name to target name
 keys <- c("ACADEMY FOR URBAN SCHOOL LEADERSHIP", "AIRBNB", "AMERICAN BEVERAGE ASSOCIATION", "ANDELL INC", "PRICEWATERHOUSECOOPERS LLP", "CITIBANK, NA",
           "CVS CAREMARK CORP", "DELAWARE NORTH COMPANIES", "DELL", "DOMINION VOTING SYSTEMS INC", "FAMILY GUIDANCE CENTERS INC",
@@ -216,7 +223,8 @@ t <-compensation %>%
   mutate(sum = sum/1000000) %>%
   ggplot() +
     geom_point(aes(n, sum), color = light_colors["gray"], size = 2, alpha = 0.4) +
-    annotate("text", x = 350, y = 2.5, label = "99% of clients paid under\n $2.5M to lobbyists\n in the time period", size = 3)
+    annotate("text", x = 350, y = 2.5, label = "99% of clients paid \nunder $2.5M to lobbyists\n in the time period", size = 3) +
+  annotate("rect", xmin = 275, xmax = 425, ymin = 2, ymax = 3, fill = light_colors['gray'], alpha = .2) 
 
 t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7) +
     geom_text_repel(data = top, aes(n, sum, label = NICK_NAME), check_overlap = TRUE, size = 3, hjust = 0, nudge_x = 0.1) + 
@@ -293,6 +301,7 @@ ggplot(aes(size = norm, label = WORD, color = norm)) +
 When compared to the general wordclound above, it is clear that these words are more specific to the interests of the top 20 clients. There is more discussion of high-level business concerns like regulations and operations. We also see terms relating to the specific businesses of the top 20 clients, like "ridesharing" for Uber and Lyft, and "digital network", the term describing the network of screens displaying advertisements commonly seen at airports, for the JCDecaux Group. 
 
 ```{r}
+# flip axes
 # try log scale? add annotation,
 compensation %>% 
   filter(TOP20 == 'Yes' & PERIOD_START < as.Date('2019-01-01')) %>%
@@ -319,6 +328,10 @@ Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their i
 # Direct Influence on City Council
 
 ```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
+# average/histogram across all poeple
+# flatten boxplot?
+# add median line
+
 council %<>%
   mutate(LAST_NAME = str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+'))),
          LAST_NAME = if_else(str_detect(` Person Name`, 'Moore, D'), 'DAVID MOORE', LAST_NAME),
@@ -483,6 +496,11 @@ There appears to be some geographic concentration of contributions by lobbyists 
 # Bin lobbyists by location? octant of community areas
 # sankey diagram
 
+# stacked bar
+# lobbyist name, bswarm, distribution of lobbyists and how much they spend beswarm chart
+# by alderman, stacked bar
+# distribution of contributions from all lobbyists to aldermen
+
 paid_by_top20 <- compensation %>% 
   filter(TOP20 == 'Yes') %>% 
   group_by(LOBBYIST_NAME) %>% 
@@ -499,7 +517,7 @@ alderman_contributions %>%
   ggplot(aes(y = sum, axis1 = reorder(LOBBYIST_NAME, sum), axis2 = reorder(ALDERMAN, -sum))) +
     geom_alluvium(aes(fill = LOBBYIST_NAME)) +
     geom_stratum(width = 1/8, fill = "black", color = "grey") +
-    geom_label(stat = "stratum", label.strata = TRUE) +
+    geom_label_repel(stat = "stratum", label.strata = TRUE) +
     scale_x_discrete(limits = c("Top 20 Clients", "Lawfirms"), expand = c(.05, .05)) +
     scale_y_continuous(label=dollar_format()) +
     scale_fill_manual(values = as.vector(dark_colors), guide = FALSE) +
