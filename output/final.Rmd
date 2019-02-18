@@ -340,7 +340,7 @@ compensation %>%
     guides(color=guide_legend(title="Paid Over $1M")) 
 ```
 
-Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Dring, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$16M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the lawfirm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the lawfirm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
+Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 8 earning over \$1M. David Dring, Courtney Nottage, and Michael Kasper, all employed by the law firm Fletcher, O'Brien, Kasper, and Nottage, earned over \$16M each. John Kelly, Jr., the president of AllCirco earned \$13.7M. Victor Reyes and Amy Kurson are partners at the law firm Reyes Kurson and each earned about \$1M. Patrick Carey and John Dunn are both partners at the law firm McGuire Woods and earned \$3.0M and \$4.8M, respectively.
 
 # Direct Influence on City Council
 
@@ -490,7 +490,7 @@ ggplot(sample_df, aes(x = parameter, y = values)) +
         plot.caption = element_text(hjust = 0, size = 10))
 ```
 
-Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$60k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
+Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$60k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Governmental Ethics Ordinance. 
 
 ```{r map1, fig.height = 8, fig.width = 8, results = "hide", warning=FALSE, message = FALSE}
 options(tigris_class = "sf")
@@ -593,7 +593,7 @@ alderman_contributions %>%
   theme(legend.position = c(.95, .85))
 ```
 
-The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen, with all of them giving significant support to Alderman Burke. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the lawfirm Reyes Kurson. Their contribution data was not included in the data protal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen, with all of them giving significant support to Ald. Burke. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the law firm Reyes Kurson. Their contribution data was not included in the data portal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
 
 
 
