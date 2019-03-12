@@ -248,7 +248,6 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
           legend.title=element_text(size=8),
           legend.position = c(0.85, 0.2)) +
   guides(color=guide_legend(title="Industry of Top 20"))
-
 ```
 
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation paid to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
@@ -356,59 +355,59 @@ council %<>%
 
 alderman_contributions <- contribution %>% 
   mutate(ALDERMAN = "") %>%
-  mutate(ALDERMAN = if_else(str_detect(RECIPIENT, 'ARENA'), 'ARENA', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'AUSTIN'), 'AUSTIN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'BEALE'), 'BEALE', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'BROOKINS'), 'BROOKINS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURKE'), 'BURKE', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURNETT'), 'BURNETT', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'CAPPLEMAN'), 'CAPPLEMAN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'CARDENAS'), 'CARDENAS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'COCHRAN'), 'COCHRAN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'CURTIS'), 'CURTIS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'DOWELL'), 'DOWELL', ALDERMAN),
+  mutate(ALDERMAN = if_else(str_detect(RECIPIENT, 'ARENA'), 'JOHN ARENA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'AUSTIN'), 'CARRIE AUSTIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BEALE'), 'ANTHONY BEALE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BROOKINS'), 'HOWARD BROOKINS JR.', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURKE'), 'EDWARD BURKE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURNETT'), 'WALTER BURNETT JR.', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CAPPLEMAN'), 'JAMES CAPPLEMAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CARDENAS'), 'GEORGE CARDENAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'COCHRAN'), 'WILLIE COCHRAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CURTIS'), 'DERRICK CURTIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'DOWELL'), 'PAT DOWELL', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'EMANUEL'), 'EMANUEL', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'ERVIN'), 'ERVIN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'FOULKES'), 'FOULKES', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'HAIRSTON'), 'HAIRSTON', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'HARRIS'), 'HARRIS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'HOPKINS'), 'HOPKINS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'KING'), 'KING', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'LAURINO'), 'LAURINO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'LOPEZ'), 'LOPEZ', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MALDONADO'), 'MALDONADO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MELL'), 'MELL', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITCHELL'), 'MITCHELL', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITTS'), 'MITTS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'ERVIN'), 'JASON ERVIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'FOULKES'), 'TONI FOULKES', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HAIRSTON'), 'LESLIE HAIRSTON', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HARRIS'), 'MICHELLE HARRIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HOPKINS'), 'BRIAN HOPKINS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'KING'), 'SOPHIA KING', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'LAURINO'), 'MARGARET LAURINO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'LOPEZ'), 'RAYMOND LOPEZ', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MALDONADO'), 'ROBERTO MALDONADO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MELL'), 'DEBORAH MELL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITCHELL'), 'GREGORY MITCHELL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITTS'), 'EMMA MITTS', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'JOE MOORE'), 'JOE MOORE', ALDERMAN),
          ALDERMAN = if_else(str_detect(RECIPIENT, 'DAVID MOORE'), 'DAVID MOORE', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MORENO'), 'MORENO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'MUNOZ'), 'MUNOZ', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'NAPOLITANO'), 'NAPOLITANO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, "O'CONNOR"), "O'CONNOR", ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, "O'SHEA"), "O'SHEA", ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'OSTERMAN'), 'OSTERMAN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'PAWAR'), 'PAWAR', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'QUINN'), 'QUINN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'RAMIREZ'), 'RAMIREZ', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'REBOYRAS'), 'REBOYRAS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'REILLY'), 'REILLY', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SADLOWSKI'), 'SADLOWSKI', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SANTIAGO'), 'SANTIAGO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SAWYER'), 'SAWYER', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SCOTT'), 'SCOTT', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SILVERSTEIN'), 'SILVERSTEIN', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SMITH'), 'SMITH', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SOLIS'), 'SOLIS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'SPOSATO'), 'SPOSATO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'TABARES'), 'TABARES', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'TALIAFERRO'), 'TALIAFERRO', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'THOMPSON'), 'THOMPSON', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'TUNNEY'), 'TUNNEY', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'VALENCIA'), 'VALENCIA', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'VILLEGAS'), 'VILLEGAS', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN),
-         ALDERMAN = if_else(str_detect(RECIPIENT, 'ZALEWSKI'), 'ZALEWSKI', ALDERMAN)
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MORENO'), 'JOE MORENO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MUNOZ'), 'RICARDO MUNOZ', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'NAPOLITANO'), 'ANTHONY NAPOLITANO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, "O'CONNOR"), "PATRICK O'CONNOR", ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, "O'SHEA"), "MATTHEW O'SHEA", ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'OSTERMAN'), 'HARRY OSTERMAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'PAWAR'), 'AMEYA PAWAR', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'QUINN'), 'MARTY QUINN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CARLOS'), 'CARLOS RAMIREZ-ROSA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'REBOYRAS'), 'ARIEL REBOYRAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'REILLY'), 'BRENDAN REILLY', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SADLOWSKI'), 'SUSAN SADLOWSKI GARZA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SANTIAGO'), 'MILAGROS SANTIAGO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SAWYER'), 'RODERICK SAWYER', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SCOTT'), 'MICHAEL SCOTT JR.', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SILVERSTEIN'), 'DEBRA SILVERSTEIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SMITH'), 'MICHELE SMITH', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SOLIS'), 'DANIEL SOLIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SPOSATO'), 'NICHOLAS SPOSATO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TABARES'), 'SILVANA TABARES', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TALIAFERRO'), 'CHRIS TALIAFERRO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'THOMPSON'), 'PATRICK THOMPSON', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TUNNEY'), 'THOMAS TUNNEY', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'VALENCIA'), 'ANNA VALENCIA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'VILLEGAS'), 'GILBERT VILLEGAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'SCOTT WAGUESPACK', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'ZALEWSKI'), 'MICHAEL ZALEWSKI', ALDERMAN)
          ) %>% 
   filter(ALDERMAN != "" & ALDERMAN != "EMANUEL" & ALDERMAN != "VALENCIA")
   
@@ -416,14 +415,19 @@ ald_totals <- alderman_contributions %>%
   filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & CONTRIBUTION_DATE < as.Date('2019-01-01')) %>%
   group_by(ALDERMAN) %>% 
   summarise(sum = sum(AMOUNT), n = n()) %>%
-  arrange(desc(sum))
+  arrange(desc(sum)) %>% 
+  mutate(lastname = if_else(ALDERMAN %in% c("JOE MOORE", "DAVID MOORE"), ALDERMAN, 
+                            if_else(ALDERMAN == 'CARLOS RAMIREZ-ROSA', 'RAMIREZ', str_split_fixed(ALDERMAN, " ", n = 3)[,2]))
+         )
+
+#ald_totals
 
 # Set names for annotations
-high_name <- 'BURKE'
-high_mid_name <- 'MELL'
-mid_name <- 'CAPPLEMAN'
-low_mid_name <- 'MALDONADO'
-low_name <- 'TABARES'
+high_name <- 'EDWARD BURKE'
+high_mid_name <- 'DEBORAH MELL'
+mid_name <- 'JAMES CAPPLEMAN'
+low_mid_name <- 'ROBERTO MALDONADO'
+low_name <- 'SILVANA TABARES'
 
 # Set amounts for annotations
 high_amt <- '$95k'
@@ -440,20 +444,20 @@ alderman_contributions %>%
   ggplot() +
   geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
   coord_flip() +
-  annotate("text", x = 50.7, y = 1600, label = "Total", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 52.7, y = 1600, label = "Total", family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = high_name, y = 1600, label = high_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = high_mid_name, y = 1600, label = high_mid_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = mid_name, y = 1600, label = mid_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = low_mid_name, y = 1600, label = low_mid_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = low_name, y = 1600, label = low_amt, family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 'TABARES', y = 800, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 3) +
-  annotate("text", x = 'ZALEWSKI', y = 850, label = "Resigned from 23rd Ward on May 31, 2018", 
+  annotate("text", x = 'SILVANA TABARES', y = 850, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 3) +
+  annotate("text", x = 'MICHAEL ZALEWSKI', y = 850, label = "Resigned from 23rd Ward on May 31, 2018", 
            family = "RobotoCondensed-Regular", size = 3) +
-  annotate("rect", xmin = high_mid_name, xmax = 51, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
+  annotate("rect", xmin = high_mid_name, xmax = 53, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
   annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
   annotate("rect", xmin = low_mid_name, xmax = mid_name, ymin = 0, ymax = 1550, fill = light_colors["purple"], alpha = .2) +
   annotate("rect", xmin = 0, xmax = low_mid_name, ymin = 0, ymax = 1550, fill = light_colors["blue"], alpha = .2) +
-  annotate("text", x = 50.5, y = 300, label = "Charged with attempted extortion Jan 3, 2019", 
+  annotate("text", x = 52.5, y = 300, label = "Charged with attempted extortion Jan 3, 2019", 
            family = "RobotoCondensed-Regular",size = 3, fontface = 2) +
   scale_y_continuous(label=dollar_format()) +
   labs(title="Since the 2015 Municipal Election, lobbyists Have \ncontributed significant amounts to aldermen",
@@ -503,9 +507,8 @@ addNA(contrib_levels)
 ward_name <- wards %>% 
   left_join(council %>% select(`Ward/Office`, LAST_NAME), by = c("ward" = "Ward/Office"))
 
-
 ward_name %>% #glimpse() %>%
-  left_join(ald_totals, by = c("LAST_NAME" = "ALDERMAN")) %>%
+  left_join(ald_totals, by = c("LAST_NAME" = "lastname")) %>%
   #filter(is.na(sum)) %>%
   mutate(Total = if_else(sum < 5000, '$0 - $4,999',
                   if_else(sum >= 5000 & sum < 10000, '$5,000 - $9,999',
