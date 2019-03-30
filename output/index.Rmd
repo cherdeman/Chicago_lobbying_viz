@@ -447,7 +447,7 @@ alderman_contributions %>%
   annotate("text", x = low_mid_name, y = 1600, label = low_mid_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = low_name, y = 1600, label = low_amt, family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = 'SILVANA TABARES', y = 850, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 3) +
-  annotate("text", x = 'MICHAEL ZALEWSKI', y = 850, label = "Resigned from 23rd Ward on May 31, 2018", 
+  annotate("text", x = 'MICHAEL ZALEWSKI', y = 1200, label = "Resigned from 23rd Ward on May 31, 2018", 
            family = "RobotoCondensed-Regular", size = 3) +
   annotate("rect", xmin = high_mid_name, xmax = 53, ymin = 0, ymax = 1550, fill = light_colors["orange"], alpha = .2) +
   annotate("rect", xmin = mid_name, xmax = high_mid_name, ymin = 0, ymax = 1550, fill = light_colors["green"], alpha = .2) +
@@ -473,13 +473,13 @@ ggplot(sample_df, aes(x = parameter, y = values)) +
   geom_segment(aes(x = 1.2, y = 125, xend = 1.2, yend = 200), size = 0.5) +
   geom_segment(aes(x = 1.2, y = 300, xend = 1.2, yend = 375), size = 0.5) +
   coord_flip() +
-  annotate("text", x = 0.8, y = 250, label = "Median \n(50th Percentile)", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.8, y = 125, label = "25th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.8, y = 375, label = "75th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.7, y = 250, label = "Median \n(50th Percentile)", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.7, y = 125, label = "25th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.7, y = 375, label = "75th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = 1.2, y = 250, label = "Interquartile Range", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.85, y = 10, label = "Min value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.85, y = 500, label = "Max value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.85, y = 600, label = "Outlier value", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.75, y = 10, label = "Min value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.75, y = 500, label = "Max value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.75, y = 600, label = "Outlier value", family = "RobotoCondensed-Regular", size = 3) +
   scale_y_continuous(limits = c(0, 650)) +
   labs(title = "Boxplot Explainer",
        caption="Each boxplot represents the distribution of donations from lobbyists to a given alderman. \nThe 'box' in the boxplot represents the interquartile range, or the middle 50% of donations.") +

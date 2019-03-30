@@ -6,4 +6,5 @@
 scratch/
 /data/*
 reverse_scatter*
+/output/dynamic_proposal.*
 
