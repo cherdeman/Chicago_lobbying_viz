@@ -345,7 +345,7 @@ Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their i
 
 # Direct Influence on City Council
 
-```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
+```{r councilmen, fig.height = 11, fig.width = 7, warning=FALSE, error=FALSE}
 council %<>%
   mutate(LAST_NAME = str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+'))),
          LAST_NAME = if_else(str_detect(` Person Name`, 'Moore, D'), 'DAVID MOORE', LAST_NAME),
@@ -438,7 +438,7 @@ alderman_contributions %>%
   left_join(ald_totals, by = 'ALDERMAN') %>% #glimpse()
   #mutate(ALDERMAN = tools::toTitleCase(tolower(ALDERMAN))) %>% glimpse()
   ggplot() +
-  geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8, median.type = "line", hoffset = 0, width = 2) + 
+  geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
   coord_flip() +
   annotate("text", x = 52.7, y = 1600, label = "Total", family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = high_name, y = 1600, label = high_amt, family = "RobotoCondensed-Regular", size = 3) +
@@ -468,18 +468,18 @@ set.seed(1234)
 sample_df <- data_frame(parameter = "test",
                           values = sample(500))
 ggplot(sample_df, aes(x = parameter, y = values)) + 
-  geom_boxplot(median.type = "line", hoffset = 0, width = 2) + 
+  geom_boxplot(width = .1) + 
   geom_point(aes(x = "test", y = 600)) +
   geom_segment(aes(x = 1.2, y = 125, xend = 1.2, yend = 200), size = 0.5) +
   geom_segment(aes(x = 1.2, y = 300, xend = 1.2, yend = 375), size = 0.5) +
   coord_flip() +
-  annotate("text", x = 0.7, y = 250, label = "Median \n(50th Percentile)", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.7, y = 125, label = "25th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.7, y = 375, label = "75th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.8, y = 250, label = "Median \n(50th Percentile)", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.8, y = 125, label = "25th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.8, y = 375, label = "75th \nPercentile", family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = 1.2, y = 250, label = "Interquartile Range", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.75, y = 10, label = "Min value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.75, y = 500, label = "Max value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
-  annotate("text", x = 0.75, y = 600, label = "Outlier value", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.85, y = 10, label = "Min value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.85, y = 500, label = "Max value, \nexcluding outliers", family = "RobotoCondensed-Regular", size = 3) +
+  annotate("text", x = 0.85, y = 600, label = "Outlier value", family = "RobotoCondensed-Regular", size = 3) +
   scale_y_continuous(limits = c(0, 650)) +
   labs(title = "Boxplot Explainer",
        caption="Each boxplot represents the distribution of donations from lobbyists to a given alderman. \nThe 'box' in the boxplot represents the interquartile range, or the middle 50% of donations.") +
