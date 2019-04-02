@@ -1,0 +1,347 @@
+---
+title: "An Exploration of Lobbying in Chicago"
+author: "Claire Herdeman"
+date: "1/27/2019"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(scales)
+library(here)
+library(readxl)
+library(zoo)
+library(ggrepel)
+library(wesanderson)
+library(RColorBrewer)
+source("utils.R")
+source("load.R")
+# [Include additional information here about what it is and who does it]
+```
+
+# Background
+
+The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities (meetings with government departments or officials) conducted on behalf of clients. 
+
+The recent controversy surrounding unregistered lobbying by individuals contacting Mayor Rahm Emmanuel through his personal email account (see [here](https://www.chicagotribune.com/news/local/politics/ct-rahm-emanuel-emails-chicago-board-of-ethics-met-0420-20170419-story.html), [here](https://www.chicagotribune.com/news/local/politics/ct-chicago-lobbyist-registration-violations-met-0722-20170721-story.html), and [here](https://www.chicagotribune.com/news/local/politics/ct-rahm-emanuel-chicago-lobbying-violations-met-0720-20170719-story.html)), suggests that there is additional unregistered lobbying activity happening in Chicago. This analysis necessarily focuses only on registered activity reported to the City and made electronically available on the City of Chicago's Open Data Portal.
+
+# Lobbying Activity
+
+```{r graph3, warning=FALSE, error=FALSE}
+# aggregate by year to show trend
+# what happened  in 2017? why seasonality?
+# fourier transformation - time to frequency domain
+# axes labels, label quarter only, year underneath
+# move legend onto plot
+
+# Summarise data into necessary format
+#act_summ <- 
+  
+activity %>% 
+  mutate(year = format(PERIOD_START, '%Y'),
+         PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
+  group_by(year, ACTION) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(year, n)) +
+    geom_line(aes(group=ACTION, color=ACTION), size = 1) +
+    scale_color_manual(values = c("#3B9AB2", "#EBCC2A", "#F21A00")) +
+    scale_y_continuous(label=comma) +
+    labs(title="Growth in administrative actions has outpaced others since 2016",
+        subtitle="Quarterly Lobbying Actions by Type, 2012 - 2018",
+        caption="Source: City of Chicago Lobbyist Data, Activity",
+        x = "Years",
+        y = "Number of Lobbying Actions") +
+    theme_minimal() +
+    theme(#axis.text.x = element_text(angle = 90, hjust = 1), 
+        plot.caption = element_text(hjust = 0),
+        legend.position = c(0.15, 0.8),
+        legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'))
+```
+
+Lobbying is a commonplace activity at all levels of government. In Chicago, lobbying "Actions" are divided into three categories: Administrative, Legislative, and Both. Administrative actions are meant to spur administrative action, including meetings regarding contract implementation, marketing services to City agencies, or submitting information regarding redevelopment plans. Legislative actions are intended to encourage support or opposition for specific ordinances or bills before the City legislature. The "Both" category includes some combination of the two. There is a notable increase in the number of Administrative actions beginning in 2016 and continuing to the present. this trend warrants further exploration.
+
+# Private Industry Uses Lobbyists to Influence Government
+
+```{r graph1, warning=FALSE, error=FALSE}
+# Top 25 flag
+top_20 <- compensation %>%
+  group_by(CLIENT_NAME) %>%
+  summarise(sum = sum(COMPENSATION_AMOUNT), cnt = n()) %>%
+  arrange(desc(sum)) %>%
+  slice(1:20) %>% 
+  select(CLIENT_NAME)
+
+compensation %<>% mutate(TOP20 = ifelse(CLIENT_NAME %in% top_20$CLIENT_NAME, "Yes", "No"))
+
+c <- compensation %>% 
+  mutate(PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
+  #filter(PERIOD_START < as.Date('2018-07-01')) %>%
+  group_by(TOP20, PERIOD_START) %>%
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
+  mutate(sum = sum/1000000) %>%
+  ggplot(aes(PERIOD_START, sum)) +
+    geom_col(aes(fill=factor(TOP20, levels=c("No","Yes")))) + 
+    scale_y_continuous(label=dollar_format()) +
+    scale_x_yearqtr(limits = c('2012 Q1', '2018 Q4'), format = "%YQ%q", n = 28) +
+    scale_fill_manual(values=c("#9999ff", "#0000ff")) + 
+    labs(title="The Top 20 Clients Pay ~25% of Lobbyist Compensation",
+         subtitle="Total Quarterly Lobbyist Compensation, 2012 - 2018",
+         caption="Source: City of Chicago Lobbyist Data, Compensation",
+         x = "Time",
+         y = "Total Lobbyist Compensation (in Millions)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        plot.caption = element_text(hjust = 0),
+        legend.box = 'horizontal',
+        legend.position = c(0.46, 0.85),
+        legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+  guides(fill=guide_legend(title="Top 20")) 
+
+c + geom_point(data = compensation %>% 
+  mutate(PERIOD_START = as.yearqtr(PERIOD_START, format = "%Y-%m-%d")) %>%
+  #filter(PERIOD_START < as.Date('2018-07-01')) %>%
+  group_by(PERIOD_START) %>%
+  summarise(pct_25 = sum(COMPENSATION_AMOUNT) * .25/1000000, n = n()), aes(PERIOD_START, pct_25, color = '#ff0000')) +
+  scale_color_identity(name = "25% Mark", 
+                      labels = c(""), 
+                      guide = "legend")
+
+
+```
+
+Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. Further, 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
+
+```{r graph2, fig.height = 6, fig.width = 7, warning=FALSE, error=FALSE}
+# Map actual name to target name
+keys <- c("ACADEMY FOR URBAN SCHOOL LEADERSHIP", "AIRBNB", "AMERICAN BEVERAGE ASSOCIATION", "ANDELL INC", "ARLINGTON PARK", "CITIBANK, NA",
+          "CVS CAREMARK CORP", "DELAWARE NORTH COMPANIES", "DELL", "DOMINION VOTING SYSTEMS INC", "FAMILY GUIDANCE CENTERS INC",
+          "HILTON WORLDWIDE", "HUDSON GROUP", "JCDECAUX GROUP", "LYFT", "NORESCO LLC", "PRESENCE HEALTH", "SSP AMERICA INC",
+          "UBER","UNITED PARCEL SERVICE")
+values <- c("Academy for Urban School Leadership", "Airbnb", "American Beverage Assc.", "Andell", "Arlington Park", "Citi",
+            "CVS", "Delaware North", "Dell", "Dominion Voting", "Family Guidance Ctrs",
+            "Hilton", "Hudson Grp", "JCDecaux Grp", "Lyft", "Noresco", "Presence Health", "SSP America",
+            "Uber", "UPS")
+nick_name <- setNames(as.list(values), keys)
+
+top <- compensation %>% 
+  filter(TOP20 == 'Yes') %>% 
+  group_by(CLIENT_NAME, CLIENT_INDUSTRY) %>%
+  summarise(sum=sum(COMPENSATION_AMOUNT), n = n()) %>%
+  mutate(sum = sum/1000000,
+         INDUSTRY = if_else(CLIENT_INDUSTRY %in% c('HOSPITALITY / RESTAURANT', 'PUBLIC UTILITIES', 
+                                                   'RETAIL', 'EDUCATION', 'RACING & WAGERING', 'TRANSPORTATION'), 
+                            'OTHER INDUSTRY', CLIENT_INDUSTRY),
+         NICK_NAME = nick_name[CLIENT_NAME])
+
+t <-compensation %>% 
+  filter(TOP20 == 'No') %>% 
+  group_by(CLIENT_NAME) %>%
+  summarise(sum=sum(COMPENSATION_AMOUNT), n = n()) %>%
+  mutate(sum = sum/1000000) %>%
+  ggplot() +
+    geom_point(aes(n, sum), color = '#595959', size = 2, alpha = 0.4) +
+    annotate("text", x = 300, y = .7, label = "99% of cleints paid under\n $2.0M to lobbyists\n in the time period", size = 3)
+
+t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7) +
+    geom_text_repel(data = top, aes(n, sum, label = NICK_NAME), check_overlap = TRUE, size = 3, hjust = 0, nudge_x = 0.1) + 
+    scale_y_continuous(label=dollar_format()) +
+    scale_color_manual(values = brewer.pal(n=6, name="Dark2")) +
+    xlim(0, 650) +
+    labs(title="Tech Companies, Healthcare Providers, and Industry Associations\n are Among the Highest Paying Clients",
+         subtitle="Compensation Payments to Lobbyists, 2012 - 2018",
+         caption="Source: City of Chicago Lobbyist Data, Compensation",
+         x = "Number of Payments",
+         y = "Total Compensation (in Millions)") +
+    theme_minimal() +
+    theme(plot.caption = element_text(hjust = 0),
+          legend.text=element_text(size=6),
+          legend.title=element_text(size=8),
+          legend.position = c(0.8, 0.2),
+          legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+  guides(color=guide_legend(title="Industry of Top 20"))
+
+#activity %>% filter(str_detect(CLIENT_NAME, 'ACADEMY FOR URBAN'))
+```
+
+In contrast to the vast majority of clients, the top 20 clients in terms of compensation to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including Uber, Lyft, and Dell also rank high on the list. 
+
+```{r}
+# try log scale? add annotation,
+compensation %>% 
+  filter(TOP20 == 'Yes') %>%
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), log_sum = log(sum(COMPENSATION_AMOUNT)), n = n()) %>% 
+  mutate(sum = sum/1000000,
+         cat = if_else(sum < 1, 'No', 'Yes')) %>%
+  ggplot(aes(reorder(tools::toTitleCase(tolower(LOBBYIST_NAME)), log_sum), log_sum)) +
+    geom_point(aes(color = cat), stat = 'identity', size = 3) +
+    scale_color_manual(values = wes_palette(n=2, name="Moonrise2")) +
+    labs(title="The Top 20 Clients Paid 63 Lobbyists Over the Time Period;\n 9 Earned Over $1M Each",
+         subtitle="Log of Total Compensation to Lobbyists by Top 20 Clients, 2012 - 2018",
+         caption="Source: City of Chicago Lobbyist Data, Compensation",
+         x = "Lobbyist",
+         y = "Log Scale of Total Compensation") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          plot.caption = element_text(hjust = 0),
+          legend.position = c(0.15, 0.75),
+          legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid')) +
+    guides(color=guide_legend(title="Paid Over $1M")) 
+```
+
+Between 2012 and 2018, the top 20 clients paid 63 lobbyists to represent their interest, with 9 earning over \$1M. David Drink, Courtney Nottage, and Michael Kasper, all employed by the lawfirm Fletcher, O'Brien, Kasper, and Nottage, earned over \$15M each.
+
+# Direct Influence on City Council
+
+```{r councilmen, fig.height = 9, fig.width = 7, warning=FALSE, error=FALSE}
+# demphasize names
+# annotate burke
+# dont color
+# quartiles for amounts, maybe box?
+# annotated legend at bottom of how box plot works - oconnor
+# meh background gray
+# repeate x axis on quartiles?
+# highlight committee charis or finance commities?
+
+council_last <- str_trim(toupper(str_extract(council$` Person Name`, '^[A-Za-z\']+')))
+#council_last
+f = ""
+for (last in council_last[40:52]) {
+  f <- paste(f, paste('ALDERMAN = if_else(str_detect(RECIPIENT, \'',last,'\'), \'',last,'\', ALDERMAN)', sep=""), ',', sep = "")
+  }
+#f
+
+alderman_contributions <- contribution %>% 
+  mutate(ALDERMAN = "") %>%
+  mutate(ALDERMAN = if_else(str_detect(RECIPIENT, 'ARENA'), 'ARENA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'AUSTIN'), 'AUSTIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BEALE'), 'BEALE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BROOKINS'), 'BROOKINS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURKE'), 'BURKE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'BURNETT'), 'BURNETT', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CAPPLEMAN'), 'CAPPLEMAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CARDENAS'), 'CARDENAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'COCHRAN'), 'COCHRAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'CURTIS'), 'CURTIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'DOWELL'), 'DOWELL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'EMANUEL'), 'EMANUEL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'ERVIN'), 'ERVIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'FOULKES'), 'FOULKES', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HAIRSTON'), 'HAIRSTON', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HARRIS'), 'HARRIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'HOPKINS'), 'HOPKINS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'KING'), 'KING', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'LAURINO'), 'LAURINO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'LOPEZ'), 'LOPEZ', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MALDONADO'), 'MALDONADO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MELL'), 'MELL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITCHELL'), 'MITCHELL', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MITTS'), 'MITTS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'JOE MOORE'), 'JOE MOORE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'DAVID MOORE'), 'DAVID MOORE', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MORENO'), 'MORENO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'MUNOZ'), 'MUNOZ', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'NAPOLITANO'), 'NAPOLITANO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, "O'CONNOR"), "O'CONNOR", ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, "O'SHEA"), "O'SHEA", ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'OSTERMAN'), 'OSTERMAN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'PAWAR'), 'PAWAR', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'QUINN'), 'QUINN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'RAMIREZ'), 'RAMIREZ', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'REBOYRAS'), 'REBOYRAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'REILLY'), 'REILLY', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SADLOWSKI'), 'SADLOWSKI', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SANTIAGO'), 'SANTIAGO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SAWYER'), 'SAWYER', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SCOTT'), 'SCOTT', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SILVERSTEIN'), 'SILVERSTEIN', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SMITH'), 'SMITH', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SOLIS'), 'SOLIS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'SPOSATO'), 'SPOSATO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TABARES'), 'TABARES', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TALIAFERRO'), 'TALIAFERRO', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'THOMPSON'), 'THOMPSON', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'TUNNEY'), 'TUNNEY', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'VALENCIA'), 'VALENCIA', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'VILLEGAS'), 'VILLEGAS', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'WAGUESPACK'), 'WAGUESPACK', ALDERMAN),
+         ALDERMAN = if_else(str_detect(RECIPIENT, 'ZALEWSKI'), 'ZALEWSKI', ALDERMAN)
+         ) %>% 
+  filter(ALDERMAN != "" & ALDERMAN != "EMANUEL")
+  
+ald_totals <- alderman_contributions %>% 
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
+  group_by(ALDERMAN) %>% 
+  summarise(sum = sum(AMOUNT), n = n()) %>%
+  arrange(desc(sum))
+                     
+alderman_contributions %>% 
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31')) %>%
+  left_join(ald_totals, by = 'ALDERMAN') %>% #glimpse()
+  #mutate(ALDERMAN = tools::toTitleCase(tolower(ALDERMAN))) %>% glimpse()
+  ggplot() +
+  geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8) + 
+  coord_flip() +
+  annotate("text", x = 50.7, y = 1600, label = "Total", size = 3) +
+  annotate("text", x = 'REILLY', y = 1600, label = "$153k", size = 3) +
+  annotate("text", x = 'JOE MOORE', y = 1600, label = "$43k", size = 3) +
+  annotate("text", x = 'TUNNEY', y = 1600, label = "$28k", size = 3) +
+  annotate("text", x = 'FOULKES', y = 1600, label = "$8k", size = 3) +
+  annotate("text", x = 'TABARES', y = 1600, label = "$0k", size = 3) +
+  annotate("text", x = 'TABARES', y = 600, label = "Appointed on July 13, 2018 to replace Ald. Zalewski in 23rd Ward", size = 2) +
+  annotate("text", x = 'ZALEWSKI', y = 700, label = "Resigned from 23rd Ward\n on May 31, 2018", size = 2) +
+  annotate("rect", xmin = 'JOE MOORE', xmax = 51, ymin = 0, ymax = 1550, fill = '#7294D4', alpha = .2) +
+  annotate("rect", xmin = 'TUNNEY', xmax = 'JOE MOORE', ymin = 0, ymax = 1550, fill = '#D8A499', alpha = .2) +
+  annotate("rect", xmin = 'FOULKES', xmax = 'TUNNEY', ymin = 0, ymax = 1550, fill = '#C6CDF7', alpha = .2) +
+  annotate("rect", xmin = 0, xmax = 'FOULKES', ymin = 0, ymax = 1550, fill = '#E6A0C4', alpha = .2) +
+  annotate("text", x = 'BURKE', y = 50, label = "Charged with attempted\n extortion on Jan 3, 2019", size = 2) +
+  scale_y_continuous(label=dollar_format()) +
+  labs(title="Since the 2015 Municipal Election, Lobbyists Have Contributed\n Significant Amounts to Aldermen",
+         subtitle="Distribution of Lobbyist Contributions to Aldermen Ordered by Total, 2015 - 2018",
+         caption="Source: City of Chicago Lobbyist Data, Contributions",
+         x = "Alderman",
+         y = "Contribution Amount") +
+  theme_minimal() +
+  theme(plot.caption = element_text(hjust = 0))
+```
+
+Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to on July 13, 2018. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015,  received over \$150k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the second highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Govermental Ethics Ordinance. 
+
+
+```{r lobbypay, fig.height = 8, fig.width = 8}
+# shows more about who is and who isn't
+# Bin lobbyists by location? octant of community areas
+# sankey diagram
+
+paid_by_top20 <- compensation %>% 
+  filter(TOP20 == 'Yes') %>% 
+  group_by(LOBBYIST_NAME) %>% 
+  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
+  filter(sum >= 1000000)
+
+alderman_contributions %>% 
+  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME, TRUE, FALSE))%>%
+  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
+  left_join(ald_totals, by = 'ALDERMAN') %>%
+  group_by(ALDERMAN, LOBBYIST_NAME) %>% 
+  summarise(sum = sum(AMOUNT), n = n()) %>%
+  ggplot() +
+    geom_tile(aes(LOBBYIST_NAME, reorder(ALDERMAN, sum), fill = sum)) +
+    scale_fill_gradient(low = "#79d279", high = "#061306", label=dollar_format()) +
+    labs(title="The Highest Paid Lobbyists by the Top 20 Clients Make\n Contributions to Almost Every Alderman",
+         subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
+         caption="Source: City of Chicago Lobbyist Data, Contributions",
+         x = "Lobbyist",
+         y = "Alderman (ordered by total contributions from included lobbyists)") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          plot.caption = element_text(hjust = 0)) +
+  guides(fill=guide_legend(title="Total Payments")) 
+```
+
+The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/). According to the available data, he donated $16,500 to City Clerk Anna Valencia in 2017 and 2018. If accurate, this would represent a violation of the campaign contribution limits set by the Chicago Governmental Ethics Ordinance.

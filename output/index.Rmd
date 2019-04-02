@@ -37,7 +37,7 @@ source("aesthetics.R")
 
 # Introduction
 
-The purpose of this analysis is to explore lobbying activity in the City of Chicago. First I explore some general trends in lobbying activity, then begin to focus on private industry clients that spend significant sums of money on lobbyists. This portion of the analysis uses the entire available dataset, covering the years from 2012 to 2018. Finally, I attempt to trace how those clients may influence Chicago aldermen through donations from lobbyists, focusing specifically on the current aldermanic term since the 2015 election.  
+Definitionally, lobbying is simply the act of attempting to influence a public official on an issue. It is a commonplace activity, and any constituent with a point of view on an issue or piece of legislation may seek to lobby a government official. Concern around lobbying arises, however, when it seems that wealthy individuals or corporate entities can use their money in order to have undo influence over elected officials who are meant to serve the public. The purpose of this analysis is to explore lobbying activity in the City of Chicago, particularly how large organizations may seek to influence members of City Council. First I explore some general trends in lobbying activity, then begin to focus on private industry clients that spend significant sums of money on lobbyists. This portion of the analysis uses the entire available dataset, covering the years from 2012 to 2018. Finally, I attempt to trace how those clients may influence Chicago aldermen through donations from lobbyists, focusing specifically on the current aldermanic term since the 2015 election.  
 
 The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities (meetings with government departments or officials) conducted on behalf of clients. 
 
@@ -438,7 +438,7 @@ alderman_contributions %>%
   left_join(ald_totals, by = 'ALDERMAN') %>% #glimpse()
   #mutate(ALDERMAN = tools::toTitleCase(tolower(ALDERMAN))) %>% glimpse()
   ggplot() +
-  geom_tufteboxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8, median.type = "line", hoffset = 0, width = 2) + 
+  geom_boxplot(aes(reorder(ALDERMAN, sum), AMOUNT), alpha = 0.8, median.type = "line", hoffset = 0, width = 2) + 
   coord_flip() +
   annotate("text", x = 52.7, y = 1600, label = "Total", family = "RobotoCondensed-Regular", size = 3) +
   annotate("text", x = high_name, y = 1600, label = high_amt, family = "RobotoCondensed-Regular", size = 3) +
@@ -468,7 +468,7 @@ set.seed(1234)
 sample_df <- data_frame(parameter = "test",
                           values = sample(500))
 ggplot(sample_df, aes(x = parameter, y = values)) + 
-  geom_tufteboxplot(median.type = "line", hoffset = 0, width = 2) + 
+  geom_boxplot(median.type = "line", hoffset = 0, width = 2) + 
   geom_point(aes(x = "test", y = 600)) +
   geom_segment(aes(x = 1.2, y = 125, xend = 1.2, yend = 200), size = 0.5) +
   geom_segment(aes(x = 1.2, y = 300, xend = 1.2, yend = 375), size = 0.5) +
