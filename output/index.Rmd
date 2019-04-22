@@ -37,9 +37,9 @@ source("aesthetics.R")
 
 # Introduction
 
-Definitionally, lobbying is simply the act of attempting to influence a public official on an issue. It is a commonplace activity, and any constituent with a point of view on an issue or piece of legislation may seek to lobby a government official. Concern around lobbying arises, however, when it seems that wealthy individuals or corporate entities can use their money in order to have undo influence over elected officials who are meant to serve the public. The purpose of this analysis is to explore lobbying activity in the City of Chicago, particularly how large organizations may seek to influence members of City Council. First I explore some general trends in lobbying activity, then begin to focus on private industry clients that spend significant sums of money on lobbyists. This portion of the analysis uses the entire available dataset, covering the years from 2012 to 2018. Finally, I attempt to trace how those clients may influence Chicago aldermen through donations from lobbyists, focusing specifically on the current aldermanic term since the 2015 election.  
+Definitionally, lobbying is simply the act of attempting to influence a public official on an issue. It is a commonplace activity, and any constituent with a point of view on an issue or piece of legislation may seek to lobby a government official. Concern around lobbying arises, however, when it seems that wealthy individuals or corporate entities can use their money in order to have undue influence over elected officials who are meant to serve the public. The purpose of this analysis is to explore lobbying activity in the City of Chicago, particularly how large organizations may seek to influence members of City Council. First, I explore some general trends in lobbying activity, then begin to focus on private industry clients that spend significant sums of money on lobbyists. This portion of the analysis uses the entire available dataset, covering the years from 2012 to 2018. Finally, I attempt to trace how those clients may influence Chicago aldermen through donations from lobbyists, focusing specifically on the current aldermanic term since the 2015 election.  
 
-The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities (meetings with government departments or officials) conducted on behalf of clients. 
+The Chicago Board of Ethics requires that all lobbyists engaging with City officials register with the Board and file regular activity reports. The activity reports are filed electronically and include compensation paid to lobbyists by clients (the organizations and firms that hire lobbyists), lobbyist contributions to public and elected City officials, and lobbying activities conducted on behalf of clients, such as meetings with government departments or officials. 
 
 The recent controversy surrounding unregistered lobbying by individuals contacting Mayor Rahm Emmanuel through his personal email account (see [here](https://www.chicagotribune.com/news/local/politics/ct-rahm-emanuel-emails-chicago-board-of-ethics-met-0420-20170419-story.html), [here](https://www.chicagotribune.com/news/local/politics/ct-chicago-lobbyist-registration-violations-met-0722-20170721-story.html), and [here](https://www.chicagotribune.com/news/local/politics/ct-rahm-emanuel-chicago-lobbying-violations-met-0720-20170719-story.html)), suggests that there is additional unregistered lobbying activity happening in Chicago. This analysis necessarily focuses only on registered activity reported to the City and made electronically available on the City of Chicago's Open Data Portal.
 
@@ -96,10 +96,16 @@ word_counts <- data_frame(WORD = unlist(word_summary$WORDS_SEP[1])) %>%
 word_counts %>% 
 ggplot(aes(x = reorder(WORD, n), y = n, label = tools::toTitleCase(tolower(WORD)))) +
   geom_col(fill = dark_colors['blue'], size = 0.1) +
-  geom_text(family = "RobotoCondensed-Regular",
+  geom_text(aes(y = 0), 
+            family = "RobotoCondensed-Regular",
+            color = "white",
             hjust = -0.1,
             inherit.aes = TRUE) +
   scale_y_continuous(label = comma, limits = c(0, 32000)) +
+  annotate('text', x=11, y=14500, label = "TIF stands for Tax Increment Financing, a public financing mechanism  used \nto subsidise developments. TIF funding for major private development projects \nlike The 78 and Lincoln Yards, has causing concern among activists.", family = "RobotoCondensed-Regular",
+             size = 3) +
+  annotate('text', x=19, y=18200, label = "PD stands for Planned Development Zone. The PD designation is \nrequired for some projects to ensure adequate public review, etc.", family = "RobotoCondensed-Regular",
+             size = 3) +
   coord_flip() +
   labs(title="Real estate-related issues are the most frequently discussed items \nin lobbying meetings",
          subtitle="Most Freqently Used Words in Activity Descriptions, 2012-2018",
@@ -108,7 +114,8 @@ ggplot(aes(x = reorder(WORD, n), y = n, label = tools::toTitleCase(tolower(WORD)
          y = "Frequency of Use") +
   theme_claire +
   theme(axis.text.y = element_blank(),
-        panel.grid.major.y = element_blank())
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = dark_colors['gray'], linetype = 2))
 ```
 
 Chicago is currently in the midst of a [construction boom](https://journalstar.com/business/national-and-international/more-skyscrapers-in-chicago-city-in-midst-of-another-building/article_77b6ed09-c57e-59bd-b509-8baa47f4de9b.html). It makes sense, then, that real estate-related lobbying discussions appear to be among the most common. The most frequently used words in the descriptions of lobbying activity include real estate and construction related words like "zoning", "development", and "approval". Sample descriptions from these meetings include:
@@ -162,14 +169,15 @@ c <- compensation %>%
     scale_y_continuous(label=dollar_format()) +
     scale_fill_manual(values=c(as.vector(light_colors['blue']), as.vector(dark_colors['blue']))) + 
     labs(title="The top 20 clients pay ~25% of lobbyist compensation",
-         subtitle="Total Quarterly Lobbyist Compensation, 2012 - 2018",
+         subtitle="Total annual lobbyist compensation increased 69% between 2012 and 2018, from $36.4M to $61.6M",
          caption="Source: City of Chicago Lobbyist Data, Compensation",
          x = "",
          y = "Total Lobbyist Compensation (in Millions)") +
   theme_claire +
-  theme(legend.box = 'horizontal',
-        legend.position = c(0.46, 0.85),
+  theme(legend.box = 'vertical',
+        legend.position = c(0.06, 0.75),
         strip.placement = 'outside',
+        legend.spacing.y = unit(0.05, "inch"),
         panel.spacing.x = unit(0,"line")) +
   guides(fill=guide_legend(title="Top 20")) 
 
@@ -187,18 +195,15 @@ points <- compensation %>%
   mutate(pct_25 = if_else(year == "2012" & quarter == "Q1", pct_25/2, pct_25))
 
 # layer 25% point
-c <- c + geom_point(data = points, 
+c + geom_point(data = points, 
   aes(quarter, pct_25, color = dark_colors['red'])) +
   facet_grid(.~ year, space = 'free_x', scales = 'free_x', switch = 'x') +
   scale_color_identity(name = "25% Mark", 
                       labels = c(""), 
                       guide = "legend")
-
-text_df <- data_frame(year = "2012", quarter = "Q2",pct_25 = 21)
-c + geom_text(data = text_df, aes(quarter, pct_25, label = 'Total annual \nlobbyist comp \nincreased 69% \nbetween 2012  \nand 2018,\n from $36.4M \n to $61.6M'), family = "RobotoCondensed-Regular", size = 2.5)
 ```
 
-Clients pay lobbyists to represent their interests to Chicago government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$36.4M to \$61.6M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
+Clients pay lobbyists to represent their interests to Chicago's government officials. On a quarterly basis, that total amount paid by clients to lobbyists routinely tops $15 Million, indicating the size of the lobbying industry in Chicago. 20 clients out of over 3,000 found in the data routinely constitute about 25% of that total. Further, the total annual amount paid to lobbyists increased 69% between 2012 and 2018, from \$36.4M to \$61.6M.  There is clear seasonality in the total payment amounts that also matches seasonal trends in lobbying activity and lobbyist contributions. It is unclear exactly why this is, but it may be related to the City of Chicago's budgeting process. A balanced budget must be passed by City Council by December 31 of each year, so individual departments are likely to be making decisions around funding allocations during the first few months of the year. 
 
 ```{r graph2, fig.height = 6, fig.width = 7, warning=FALSE, error=FALSE}
 #highlight annotation
@@ -231,9 +236,10 @@ t <-compensation %>%
   mutate(sum = sum/1000000) %>%
   ggplot() +
     geom_point(aes(n, sum), color = light_colors["gray"], size = 2, alpha = 0.4) +
-    annotate("text", x = 350, y = 2.5, label = "99% of clients paid \nunder $2.5M to lobbyists\n in the time period",
+    annotate("text", x = 350, y = 2.5, label = "Only 1% of clients paid \nover $2.5M to lobbyists\n in the time period",
              family = "RobotoCondensed-Regular", size = 3) +
-  annotate("rect", xmin = 275, xmax = 425, ymin = 1.9, ymax = 3.1, fill = light_colors['gray'], alpha = .2) 
+    annotate("rect", xmin = 275, xmax = 425, ymin = 1.9, ymax = 3.1, fill = light_colors['gray'], alpha = .2)
+    
 
 t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7) +
     geom_text_repel(data = top, aes(n, sum, label = NICK_NAME), check_overlap = TRUE, size = 3, hjust = 0, nudge_x = 0.1) + 
@@ -248,8 +254,10 @@ t + geom_point(data = top, aes(n, sum, color = INDUSTRY), size = 2, alpha = 0.7)
     theme_claire +
     theme(legend.text=element_text(size=6),
           legend.title=element_text(size=8),
-          legend.position = c(0.85, 0.2)) +
+          legend.position = c(0.88, 0.15),
+          legend.key.size = unit(.1, "inches")) +
   guides(color=guide_legend(title="Industry of Top 20"))
+
 ```
 
 In contrast to the vast majority of clients, the top 20 clients in terms of compensation paid to lobbyists each paid over $2.5M between 2012 and 2018. While any organization, including non-profits and other public service entities, may lobby government, the top 20 clients are almost all private companies with a national profile. The top spender, the American Beverage Association, has consistently paid lobbyists to advocate to the Mayor and City Council against legislation like the proposed Soda Tax and a ban on high-caffeine energy drinks proposed in 2013. Technology companies including [Uber](https://www.nbcchicago.com/blogs/ward-room/Uber-Chicago-lobby-firms-political-donations-274030871.html), Lyft, and Dell also rank high on the list. 
@@ -295,7 +303,6 @@ word_counts_top20 %>%
   geom_text(family = "RobotoCondensed-Regular",
             hjust = -0.1, size = 3,
             inherit.aes = TRUE) +
-  #facet_grid(.~TOP20) +
   scale_y_continuous(label = comma, limits = c(0, 1450)) +
   coord_flip() +
   labs(title="The top 20 clients are discussing the specific concerns \nof their businesses with city officials",
@@ -305,7 +312,8 @@ word_counts_top20 %>%
          y = "Frequency of Use") +
   theme_claire +
   theme(axis.text.y = element_blank(),
-        panel.grid.major.y = element_blank())
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color = dark_colors['gray'], linetype = 2))
 ```
 
 When comparing the common terms from the top 20 clients with those of all other clients, it is clear that their concerns are different from those generally raised in lobbying meetings. There is more discussion of high-level business concerns like regulations and operations. We also see terms relating to the specific businesses of the top 20 clients, like "ridesharing" for Uber and Lyft, and "digital network", the term describing the network of screens displaying advertisements commonly seen at airports, for the JCDecaux Group. Sample descriptions from these meetings include: 
@@ -327,8 +335,8 @@ compensation %>%
     geom_point(aes(color = cat), stat = 'identity', size = 3) +
     scale_y_log10(sec.axis = dup_axis(), label=dollar_format()) +
     scale_color_manual(values = as.vector(dark_colors[c("blue", "red")])) +
-    annotate('text', x = 'John Kelly, Jr.', y = .2, label = 'The top 4 lobbyists each earned over $16M \nin the period, or over $2.5M annually \nfrom the top 20 clients alone', family = "RobotoCondensed-Regular", size = 3) +
-    annotate("rect", xmin = 59.5, xmax = 64.5, ymin = 0.008, ymax = 5, fill = light_colors['gray'], alpha = .2) +
+    annotate('text', x = 'John Kelly, Jr.', y = .15, label = 'The top 4 lobbyists each earned over $16M \nin the period, or over $2.5M annually \nfrom the top 20 clients alone', family = "RobotoCondensed-Regular", size = 3) +
+    annotate("rect", xmin = 59.5, xmax = 64.5, ymin = 0.005, ymax = 4, fill = light_colors['gray'], alpha = .2) +
     coord_flip() +
     labs(title="The top 20 clients paid 63 lobbyists over \nthe time period; 8 Earned Over $1M Each",
          subtitle="Log Compensation from Top 20 Clients to Lobbyists, 2012 - 2018",
@@ -336,7 +344,7 @@ compensation %>%
          x = "Lobbyist",
          y = "Log Scale of Total Compensation (in Millions)") +
     theme_claire +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+    theme(axis.text.x = element_text(hjust = 1),
           legend.position = c(0.15, 0.9)) +
     guides(color=guide_legend(title="Paid Over $1M")) 
 ```
@@ -461,7 +469,8 @@ alderman_contributions %>%
          caption="Source: City of Chicago Lobbyist Data, Contributions",
          x = "Alderman (ordered by total lobbyist contributions)",
          y = "Contribution Amount") +
-  theme_claire
+  theme_claire +
+  theme(panel.grid.major.y = element_blank())
 ```
 ```{r boxplot_legend, fig.height = 2, fig.width = 7}
 set.seed(1234)
@@ -490,7 +499,7 @@ ggplot(sample_df, aes(x = parameter, y = values)) +
         plot.caption = element_text(hjust = 0, size = 10))
 ```
 
-Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to replace Ald. Zalewski on July 13, 2018 after his resignation. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), first elected in 2007 and Vice Mayor since 2015, received over \$60k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Governmental Ethics Ordinance. 
+Virtually all elected members of the City Council received contributions from lobbyists since the last municipal election; the only exception is Ald. Tabares who was appointed to replace Ald. Zalewski on July 13, 2018 after his resignation. There is huge variation in the total contributions from lobbyists since the last municipal election. For example, Ald. Reilly of the 42nd Ward (incl. River North, Gold Cost, and Streeterville), who was first elected in 2007 and served as Vice Mayor since 2015, received over \$60k while Ald. Mitchell, a first term alderman from the 7th Ward (incl. South Shore, South Chicago, and Calumet Heights) received under \$1k. Ald. Ed Burke was the Finance Committee Chairman and received the highest total contributions before being indicted for attempted extortion on January 3, 2019. Note that campaign contributions by registered lobbyists [are limited](https://www.chicago.gov/content/dam/city/depts/ethics/general/Publications/PlEng-CFO.pdf) to $1,500 per candidate per calendar year by the Chicago Governmental Ethics Ordinance. 
 
 ```{r map1, fig.height = 8, fig.width = 8, results = "hide", warning=FALSE, message = FALSE}
 options(tigris_class = "sf")
@@ -535,63 +544,7 @@ ward_name %>% #glimpse() %>%
         legend.position = c(.85, .85))
 ```
 
-Some of the donation activity mirrors common investment patterns of greater investment on the North Side than on the South and West Sides, but this pattern does not hold true everywhere. Rather, this seems to suggest that the amount of donations an alderman recieves is related to their stature on the City Council, particularly significant committee chairmanships. This again highlights Ald. Ed Burke of the 14th Ward who was the chair of the influential Finance Committee until his indictment on corruption charges, as well as [Ald. Carrie Austin](https://www.chicago.gov/city/en/about/wards/34/alderman_carrie_maustin.html) of the 34th Ward, located on the far South Side, who chairs the Committee on Budget & Government Operations.  
-
-```{r lobbypay, fig.height = 30, fig.width = 8}
-# shows more about who is and who isn't
-# Bin lobbyists by location? octant of community areas
-# sankey diagram
-
-# stacked bar
-# lobbyist name, bswarm, distribution of lobbyists and how much they spend beswarm chart
-# by alderman, stacked bar
-# distribution of contributions from all lobbyists to aldermen
-
-paid_by_top20 <- compensation %>% 
-  filter(TOP20 == 'Yes') %>% 
-  group_by(LOBBYIST_NAME) %>% 
-  summarise(sum = sum(COMPENSATION_AMOUNT), n = n()) %>%
-  filter(sum >= 1000000)
-
-ald <- alderman_contributions %>% 
-  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE))%>%
-  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
-  left_join(ald_totals, by = 'ALDERMAN') %>%
-  group_by(ALDERMAN) %>% 
-  summarise(ald_sum = sum(AMOUNT), n = n())
-
-lob <- alderman_contributions %>% 
-  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE))%>%
-  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
-  left_join(ald_totals, by = 'ALDERMAN') %>%
-  group_by(LOBBYIST_NAME) %>% 
-  summarise(lob_sum = sum(AMOUNT), n = n())
-
-alderman_contributions %>% 
-  mutate(paid_top20 = if_else(LOBBYIST_NAME %in% paid_by_top20$LOBBYIST_NAME | LOBBYIST_NAME == 'REYES KURSON', TRUE, FALSE))%>%
-  filter(CONTRIBUTION_DATE > as.Date('2014-12-31') & paid_top20) %>%
-  left_join(ald_totals, by = 'ALDERMAN') %>%
-  group_by(ALDERMAN, LOBBYIST_NAME) %>% 
-  summarise(sum = sum(AMOUNT), n = n()) %>%
-  left_join(ald, by = 'ALDERMAN') %>%
-  left_join(lob, by = 'LOBBYIST_NAME') %>%
-  #mutate(burke = if_else(str_detect(ALDERMAN, 'BURKE'), "Yes", "No")) %>%
-  ggplot(aes(y = sum, axis1 = reorder(LOBBYIST_NAME, -lob_sum), axis2 = reorder(ALDERMAN, -ald_sum))) +
-    geom_alluvium(aes(fill = LOBBYIST_NAME)) +
-    geom_stratum(width = 1/6, fill = "black", color = "grey") +
-    geom_label_repel(stat = "stratum", label.strata = TRUE) +
-    scale_x_discrete(limits = c("Top Lobbyists", "Aldermen"), expand = c(.05, .05)) +
-    scale_y_continuous(label=dollar_format()) +
-    scale_fill_manual(values = as.vector(dark_colors), guide = FALSE) +
-    labs(title="The highest paid lobbyists by the top 20 clients \nmake contributions to almost every alderman",
-         subtitle="Total Contributions by Top Paid Lobbyists, 2015-2018",
-         caption="Source: City of Chicago Lobbyist Data, Compensation",
-         y = "Total Compensation (in Millions)") +
-    theme_claire +
-  theme(legend.position = c(.95, .85))
-```
-
-The lobbyists paid the most compensation by the top 20 firms appear to have a strategy of blanket, moderate, financial support for almost all aldermen, with all of them giving significant support to Ald. Burke. One notable exception is John Kelly, President and Owner of the public affairs consulting firm [All-Circo, Inc](http://www.allcirco.com/), who appears to concentrate on only a few. Two of the eight attorneys paid over $1M, Amy Kurson and Victor Reyes, are both partners at the law firm Reyes Kurson. Their contribution data was not included in the data portal contribution records, so aggregate records from the firm were added from [IllinoisSunshine.com](IllinoisSunshine.com).
+Some of the donation activity mirrors common investment patterns of greater investment on the North Side than on the South and West Sides, but this pattern does not hold true everywhere. Rather, this seems to suggest that the amount of donations an alderman receives is related to their stature on the City Council, particularly significant committee chairmanships. This again highlights Ald. Ed Burke of the 14th Ward who was the chair of the influential Finance Committee until his indictment on corruption charges, as well as [Ald. Carrie Austin](https://www.chicago.gov/city/en/about/wards/34/alderman_carrie_maustin.html) of the 34th Ward, located on the far South Side, who chairs the Committee on Budget & Government Operations.  
 
 # Conclusion
 
